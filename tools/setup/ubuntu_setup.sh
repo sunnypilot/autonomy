@@ -9,6 +9,8 @@ sudo apt update
 
 # Install Python 3.12 if not already installed
 sudo apt install -y python3.12 python3.12-venv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 python3.12 -m venv .venv
 source .venv/bin/activate
 
@@ -18,7 +20,7 @@ echo "[ ] finished apt install t=$SECONDS"
 
 
 # install python dependencies
-pip install -e .
+uv pip install -e .[testing]
 echo "[ ] installed python dependencies t=$SECONDS"
 
 echo

@@ -6,20 +6,29 @@ build-backend = "setuptools.build_meta"
 name = "autonomy"
 version = "0.1.0"
 description = "Machine learning components for sunnypilot"
+requires-python = ">=3.12"
 dependencies = [
-    "numpy >=2.0",
+    "datasets == 4.0.0",
+    "dearpygui >= 2.1.0",
+    "hypothesis == 6.47.*",
     "matplotlib",
+    "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl",
+    "numpy >= 2.0",
     "onnx >= 1.14.0",
     "onnxruntime",
     "opencv-python-headless",
-    "dearpygui>=2.1.0",
-    "requests",
-    "torch",
-    "torchvision",
-    "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl",
-    "hypothesis ==6.47.*",
-    "mypy",
     "panda3d",
+    "requests",
+    "torch == 2.2.2",
+    "torchvision",
+    "ultralytics",
+]
+
+[project.optional-dependencies]
+testing = [
+    "codespell",
+    "mypy",
+    "pre-commit-hooks",
     "pytest",
     "pytest-cpp",
     "pytest-subtests",
@@ -30,6 +39,4 @@ dependencies = [
     "pytest-mock",
     "pytest-repeat",
     "ruff",
-    "codespell",
-    "pre-commit-hooks",
 ]

@@ -32,7 +32,9 @@ else
     brew up
 fi
 
-brew install python@3.12. # install python if not already installed
+brew install python@3.12 # install python if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 python3.12 -m venv .venv
 source .venv/bin/activate
 
@@ -63,7 +65,7 @@ export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
-pip install -e .
+uv pip install -e .[testing]
 echo "[ ] installed python dependencies t=$SECONDS"
 
 echo
