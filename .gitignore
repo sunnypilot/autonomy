@@ -2,7 +2,7 @@
 .venv/
 venv/
 
-# Python bytecode
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
