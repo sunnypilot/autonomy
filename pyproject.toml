@@ -8,6 +8,8 @@ version = "0.1.0"
 description = "Machine learning components for sunnypilot"
 requires-python = ">=3.12"
 dependencies = [
+    "einops>=0.8.0",
+    "einx>=0.3.0",
     "datasets == 4.0.0",
     "dearpygui >= 2.1.0",
     "hypothesis == 6.47.*",
@@ -29,6 +31,7 @@ testing = [
     "mypy",
     "pre-commit-hooks",
     "pytest",
+    "pytest-cov>=5.0.0",
     "pytest-subtests",
     "pytest-timeout",
     "pytest-randomly",
