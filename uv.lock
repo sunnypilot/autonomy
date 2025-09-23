@@ -114,6 +114,7 @@ dependencies = [
     { name = "torch" },
     { name = "torchvision" },
     { name = "ultralytics" },
+    { name = "vector-quantize-pytorch" },
 ]
 
 [package.optional-dependencies]
@@ -161,6 +162,7 @@ requires-dist = [
     { name = "torch", specifier = ">=2.3.0" },
     { name = "torchvision", specifier = ">=0.18.0" },
     { name = "ultralytics" },
+    { name = "vector-quantize-pytorch" },
 ]
 provides-extras = ["testing"]
 
@@ -2104,6 +2106,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/15/22/9ee70a2574a4f4599c47dd506532914ce044817c7752a79b6a51286319bc/urllib3-2.5.0.tar.gz", hash = "sha256:3fc47733c7e419d4bc3f6b3dc2b4f890bb743906a30d56ba4a5bfa4bbff92760", size = 393185, upload-time = "2025-06-18T14:07:41.644Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a7/c2/fe1e52489ae3122415c51f387e221dd0773709bad6c6cdaa599e8a2c5185/urllib3-2.5.0-py3-none-any.whl", hash = "sha256:e6b01673c0fa6a13e374b50871808eb3bf7046c4b125b216f6bf1cc604cff0dc", size = 129795, upload-time = "2025-06-18T14:07:40.39Z" },
+]
+
+[[package]]
+name = "vector-quantize-pytorch"
+version = "1.23.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "einops" },
+    { name = "einx" },
+    { name = "torch" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/45/d0/0bf22b911d3406031dcbec4d5d775c0073a789a51ac76e3255a5366e236d/vector_quantize_pytorch-1.23.2.tar.gz", hash = "sha256:09c560bd9f453b9368028854222000f9523f0fc6306227fe1822d64a1c48e6d1", size = 697975, upload-time = "2025-08-29T18:45:28.306Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/18/bb5e55a5fa28f9d9e3063c35fdb49f4f183f36e801ac3324207e21361d11/vector_quantize_pytorch-1.23.2-py3-none-any.whl", hash = "sha256:7e74bee6d0f880aa94c86fe2f86a2f84182b7bb28780d705fdac9d1c0e68e072", size = 48060, upload-time = "2025-08-29T18:45:26.7Z" },
 ]
 
 [[package]]
