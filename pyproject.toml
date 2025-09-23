@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autonomy"
+version = "0.1.0"
+description = "Machine learning components for sunnypilot"
+requires-python = ">=3.12"
+dependencies = [
+    "einops>=0.8.0",
+    "einx>=0.3.0",
+    "datasets == 4.0.0",
+    "dearpygui >= 2.1.0",
+    "hypothesis == 6.47.*",
+    "matplotlib",
+    "numpy >= 2.0",
+    "onnx >= 1.14.0",
+    "onnxruntime",
+    "opencv-python-headless",
+    "panda3d",
+    "requests",
+    "torch >= 2.3.0",
+    "torchvision >= 0.18.0",
+    "ultralytics",
+    "vector-quantize-pytorch",
+]
+
+[project.optional-dependencies]
+testing = [
+    "codespell",
+    "mypy",
+    "pre-commit-hooks",
+    "pytest",
+    "pytest-cov>=5.0.0",
+    "pytest-subtests",
+    "pytest-timeout",
+    "pytest-randomly",
+    "pytest-asyncio",
+    "pytest-mock",
+    "pytest-repeat",
+    "ruff",
+]

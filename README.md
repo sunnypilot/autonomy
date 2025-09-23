@@ -14,9 +14,19 @@ The repository includes implementations and tools for:
 - **Quantizers**: Algorithms for model quantization to optimize performance and size, able to downsample 1 GB models to 200MiB models.
 - **Model-Specific Code**: Offloaded code from the sunnypilot repository for specific models.
 
+## Setting up environment
+
+To set up the development environment, run the appropriate setup script for your operating system:
+
+- **macOS**: `./tools/setup/mac_setup.sh`
+- **Ubuntu**: `./tools/setup/ubuntu_setup.sh`
+
+After running the script, activate the virtual environment in your shell:
+`source .venv/bin/activate`
+
 ## Repository Structure
 
-- key:value pairs will be filled out here as the repo grows.
+- `tools`: setup scripts and basic lint tests.
 
 ## Contributing
 
