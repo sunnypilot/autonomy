@@ -21,14 +21,12 @@ To set up the development environment, run the appropriate setup script for your
 - **macOS**: `./tools/setup/mac_setup.sh`
 - **Ubuntu**: `./tools/setup/ubuntu_setup.sh`
 
-These scripts will create a virtual environment (`.venv`) in the repo, and install system dependencies and Python packages defined in `pyproject.toml`.
-
 After running the script, activate the virtual environment in your shell:
 `source .venv/bin/activate`
 
 ## Repository Structure
 
-- key:value pairs will be filled out here as the repo grows.
+- `tools`: setup scripts and basic lint tests.
 
 ## Contributing
 
