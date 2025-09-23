@@ -2,9 +2,6 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT="$(cd $DIR/../ && pwd)"
-
-
 sudo apt update
 
 # Install Python 3.12 if not already installed
