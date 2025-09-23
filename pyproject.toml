@@ -18,8 +18,8 @@ dependencies = [
     "opencv-python-headless",
     "panda3d",
     "requests",
-    "torch",
-    "torchvision",
+    "torch >= 2.3.0",
+    "torchvision >= 0.18.0",
     "ultralytics",
 ]
 
@@ -38,7 +38,4 @@ testing = [
     "pytest-mock",
     "pytest-repeat",
     "ruff",
-]
-simulator = [
-    "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl",
 ]

@@ -65,7 +65,7 @@ export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
-uv pip install -e .[testing, simulator]
+uv pip install -e .[testing]
 echo "[ ] installed python dependencies t=$SECONDS"
 
 echo
