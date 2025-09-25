@@ -1,12 +1,12 @@
-[build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+[tool.setuptools.packages.find]
+include = ["tools"]
 
 [project]
 name = "autonomy"
 version = "0.1.0"
 description = "Machine learning components for sunnypilot"
-requires-python = ">=3.12"
+readme = "README.md"
+requires-python = ">=3.12.0"
 dependencies = [
     "einops>=0.8.0",
     "einx>=0.3.0",
@@ -19,11 +19,15 @@ dependencies = [
     "onnxruntime",
     "opencv-python-headless",
     "panda3d",
+    "pycapnp",
     "requests",
     "torch >= 2.3.0",
     "torchvision >= 0.18.0",
     "ultralytics",
     "vector-quantize-pytorch",
+    "folium",
+    "contextily",
+    "cartopy"
 ]
 
 [project.optional-dependencies]
@@ -41,3 +45,26 @@ testing = [
     "pytest-repeat",
     "ruff",
 ]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+# allow implicit optionals for default args
+implicit_optional = true
+
+local_partial_types=true
+explicit_package_bases=true
+disable_error_code = "annotation-unchecked"
