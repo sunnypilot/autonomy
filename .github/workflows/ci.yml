@@ -9,38 +9,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sunnypilot/autonomy:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
     - uses: actions/checkout@v4
       with:
         lfs: true
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-
-    - name: Install uv
+    - name: Install project in development mode
       run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-    - name: Run Ubuntu setup
-      run: |
-        ./tools/setup/ubuntu_setup.sh
-
-    - name: Activate virtual environment
-      run: |
-        source .venv/bin/activate
-        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
-        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+        uv pip install -e .[testing]
 
     - name: Run lint
       run: |
-        source .venv/bin/activate
         ./tools/scripts/lint.sh
 
     - name: Run tests
       run: |
-        source .venv/bin/activate
         pytest -v
