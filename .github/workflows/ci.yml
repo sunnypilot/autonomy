@@ -22,7 +22,7 @@ jobs:
 
     - name: Install project in development mode
       run: |
-        uv pip install -e .[testing]
+        uv pip install -e .[testing,dev]
 
     - name: Run lint
       run: |
