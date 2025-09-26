@@ -1,9 +1,7 @@
-FROM ubuntu:24.04
+FROM python:3.12-slim
 
 # Install system dependencies
 RUN apt update && apt install -y \
-    python3.12 \
-    python3.12-venv \
     git \
     git-lfs \
     zlib1g-dev \
@@ -24,12 +22,12 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="$PATH:/root/.local/bin"
 
 # Create virtual environment
-RUN python3.12 -m venv /opt/venv
+RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Set working directory
-WORKDIR /workspace
-RUN git config --global --add safe.directory /workspace
+WORKDIR /__w/autonomy/autonomy
+RUN git config --global --add safe.directory /__w/autonomy/autonomy
 
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
