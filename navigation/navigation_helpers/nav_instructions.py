@@ -21,14 +21,6 @@ class NavigationInstructions:
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
-  def extract_turn_direction(self, instruction):
-    if 'Turn left' in instruction:
-      return 'left'
-    elif 'Turn right' in instruction:
-      return 'right'
-    else:
-      return 'None'
-
   def get_upcoming_turn(self, current_lat, current_lon) -> str:
     route = self.get_current_route()
     if not route or not route.get('steps'):
@@ -128,7 +120,7 @@ class NavigationInstructions:
           'duration': step.duration,
           'maneuver': step.maneuver,
           'location': (step.location.longitude, step.location.latitude),
-          'turn_direction': self.extract_turn_direction(step.instruction)
+          'turn_direction': self.mapbox.extract_turn_direction(step.instruction)
         })
       geometry = [(coord.longitude, coord.latitude) for coord in route.geometry]
       cumulative_distances = [0.0]
