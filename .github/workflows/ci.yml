@@ -23,6 +23,7 @@ jobs:
 
     - name: Run lint
       run: |
+        git config --global --add safe.directory $PWD
         ./tools/scripts/lint.sh
 
     - name: Run tests

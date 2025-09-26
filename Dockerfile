@@ -27,13 +27,12 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Set working directory
 WORKDIR /__w/autonomy/autonomy
-RUN git config --global --add safe.directory /__w/autonomy/autonomy
 
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies
-RUN uv pip install -e .[testing,dev]
+RUN uv pip install -e .[testing]
 
 # Default command
 CMD ["bash"]
