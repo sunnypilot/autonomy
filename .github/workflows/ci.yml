@@ -1,0 +1,35 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sunnypilot/autonomy:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        lfs: true
+        fetch-depth: 1
+
+    - name: Run lint
+      run: |
+        git config --global --add safe.directory $PWD
+        ./tools/scripts/lint.sh
+
+    - name: Run tests
+      run: |
+        if find . -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+          pytest -v
+        else
+          echo "No test files found, skipping..."
+        fi

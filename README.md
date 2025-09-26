@@ -12,7 +12,7 @@ The repository includes implementations and tools for:
 - **Testing Capabilities**: Validated integration testing for troubleshooting and analyzing model performance.
 - **Driving Model Merge Scripts**: Tools to combine multiple driving models into one.
 - **Quantizers**: Algorithms for model quantization to optimize performance and size, able to downsample 1 GB models to 200MiB models.
-- **Model-Specific Code**: Offloaded code from the sunnypilot repository for specific models.
+- **Model-Specific Code**: Offloaded code from the sunnypilot repository to help better the dev experience.
 
 ## Setting up environment
 
@@ -25,6 +25,8 @@ After running the script, activate the virtual environment in your shell:
 `source .venv/bin/activate`
 
 ## Repository Structure
+
+- `navigation`: module containing mapbox navigation features created to be transitioned to sunnypilot as a semi-offline navigation naemon. This module will map turn desires, keep left/right, and eventually auto lane changes to navigation instructions to provide a more comfortable user experience.
 
 - `tools`: setup scripts and basic lint tests.
 
