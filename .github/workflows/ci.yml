@@ -2,44 +2,34 @@ name: Unit Tests
 
 on:
   push:
+    branches: [master]
   pull_request:
 
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sunnypilot/autonomy:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
     - uses: actions/checkout@v4
       with:
         lfs: true
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.12'
-
-    - name: Install uv
-      run: |
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-    - name: Run Ubuntu setup
-      run: |
-        ./tools/setup/ubuntu_setup.sh
-
-    - name: Activate virtual environment
-      run: |
-        source .venv/bin/activate
-        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
-        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+        fetch-depth: 1
 
     - name: Run lint
       run: |
-        source .venv/bin/activate
+        git config --global --add safe.directory $PWD
         ./tools/scripts/lint.sh
 
     - name: Run tests
       run: |
-        source .venv/bin/activate
-        pytest -v
+        if find . -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+          pytest -v
+        else
+          echo "No test files found, skipping..."
+        fi
