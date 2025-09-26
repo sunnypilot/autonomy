@@ -33,8 +33,8 @@ WORKDIR /workspace
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install Python testing dependencies
-RUN uv pip install -e .[testing]
+# Install Python dependencies
+RUN uv pip install -e .[testing,dev]
 
 # Default command
 CMD ["bash"]
