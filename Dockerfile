@@ -29,6 +29,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Set working directory
 WORKDIR /workspace
+RUN git config --global --add safe.directory /workspace
 
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
