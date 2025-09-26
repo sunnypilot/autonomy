@@ -17,13 +17,10 @@ RUN apt update && apt install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="$PATH:/root/.local/bin"
-
-# Create virtual environment
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Install uv and create virtual environment
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    python3 -m venv /opt/venv
+ENV PATH="$PATH:/root/.local/bin:/opt/venv/bin"
 
 # Set working directory
 WORKDIR /__w/autonomy/autonomy
