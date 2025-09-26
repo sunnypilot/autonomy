@@ -29,7 +29,7 @@ WORKDIR /__w/autonomy/autonomy
 COPY pyproject.toml uv.lock ./
 
 # Install Python dependencies
-RUN uv pip install -e .[testing]
+RUN bash -c ". /opt/venv/bin/activate && uv pip install -e .[testing]"
 
 # Default command
 CMD ["bash"]
