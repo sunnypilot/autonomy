@@ -1,1 +1,0 @@
-# Navigation helpers tests package
