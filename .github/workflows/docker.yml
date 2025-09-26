@@ -3,10 +3,6 @@ name: Build Docker Image
 on:
   push:
     branches: [master, ci-init]
-    paths:
-      - 'Dockerfile'
-      - 'pyproject.toml'
-      - 'uv.lock'
   workflow_dispatch:
 
 jobs:
