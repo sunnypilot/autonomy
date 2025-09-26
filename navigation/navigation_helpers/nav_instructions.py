@@ -1,10 +1,16 @@
+import capnp
 import math
+import os
+
+from navigation.common.params.params import Params
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 
 
 class NavigationInstructions:
   def __init__(self):
     self.mapbox = MapboxIntegration()
+    self.params = Params()
+    self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', 'common', 'navigation.capnp'))
 
   def haversine_distance(self, lat1, lon1, lat2, lon2):
     # Radius of Earth in meters
@@ -23,18 +29,18 @@ class NavigationInstructions:
     else:
       return 'None'
 
-  def get_upcoming_turn(self, current_lat, current_lon):
+  def get_upcoming_turn(self, current_lat, current_lon) -> str:
     route = self.get_current_route()
     if not route or not route.get('steps'):
-      return None
+      return 'None'
     for step in route['steps']:
-      turn_dir = step.get('turn_direction')
+      turn_dir = str(step.get('turn_direction'))
       if turn_dir and turn_dir != 'None':
         turn_lat, turn_lon = step['location']
         distance = self.haversine_distance(current_lat, current_lon, turn_lat, turn_lon)
         if distance <= 100:  # Within 100 meters
           return turn_dir
-    return None
+    return 'None'
 
   def get_route_progress(self, current_lat, current_lon):
     """Get current position on route and distance to next turn"""
@@ -109,17 +115,10 @@ class NavigationInstructions:
     return closest_lat, closest_lon, dist
 
   def get_current_route(self):
-    from navigation.common.params.params import Params
-    import capnp
-    import os
-
-    params = Params()
-    params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', 'common', 'navigation.capnp'))
-
-    param_value = params.get("MapboxSettings", encoding='bytes')
+    param_value = self.params.get("MapboxSettings", encoding='bytes')
     if not param_value:
       return None
-    with params_capnp.MapboxSettings.from_bytes(param_value) as settings:
+    with self.params_capnp.MapboxSettings.from_bytes(param_value) as settings:
       route = settings.navData.route
       steps = []
       for step in route.steps:

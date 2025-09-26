@@ -5,7 +5,7 @@ def test_nav_manager():
   """Test navigation manager functionality"""
   try:
     # Test initialization
-    nav_manager = NavManager("580 winchester dr. Oxnard, CA", (34.16207, -119.19657))
+    nav_manager = NavManager("740 E Ventura Blvd. Camarillo, CA", (34.23305, -119.17557))
 
     # Test route retrieval
     route = nav_manager.nav.get_current_route()

@@ -28,10 +28,10 @@ class NavManager:
     # Set destination and generate route
     self._setup_destination(destination)
 
-  def _read_mapbox_token(self):
+  def _read_mapbox_token(self) -> str:
     """Read Mapbox token from params"""
-    token_bytes = self.mapbox.params.get('MapboxToken', encoding='bytes')
-    return token_bytes.decode('utf-8') if token_bytes else ''
+    token = str(self.mapbox.params.get("MapboxToken", encoding='utf8'))
+    return token
 
   def _setup_destination(self, destination):
     """Set up navigation destination and generate route"""

@@ -1,29 +1,22 @@
 @0x8d30477844c72468;
 struct MapboxSettings {
-  publicKey @0 :Text;
-  lastGPSPosition @1 :GPSPosition;
-  searchInput @2 :Int32;
-  navData @3 :NavData;
+  lastGPSPosition @0 :GPSPosition;
+  searchInput @1 :Int32;
+  navData @2 :NavData;
 
   struct GPSPosition {
     longitude @0 :Float64;
     latitude @1 :Float64;
   }
 
-  struct NavDestination {
-    latitude @0 :Float64;
-    longitude @1 :Float64;
-    placeName @2 :Text;
-  }
-
-  struct NavDestinationEntry {
+  struct Destination {
     latitude @0 :Float64;
     longitude @1 :Float64;
     placeName @2 :Text;
   }
 
   struct NavDestinationsList {
-    entries @0 :List(NavDestinationEntry);
+    entries @0 :List(Destination);
   }
 
   struct RouteStep {
@@ -48,7 +41,7 @@ struct MapboxSettings {
   }
 
   struct NavData {
-    current @0 :NavDestination;
+    current @0 :Destination;
     cache @1 :NavDestinationsList;
     route @2 :Route;
   }

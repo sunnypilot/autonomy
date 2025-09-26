@@ -33,6 +33,8 @@ class Params:
     if isinstance(value, str) and encoding == 'bytes':
       return base64.b64decode(value)
     if encoding == 'utf8':
+      if key == "MapboxToken":
+        return base64.b64decode(value).decode('utf-8')
       return value
     return value
 

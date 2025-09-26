@@ -4,21 +4,15 @@ from urllib.parse import quote
 import requests
 from navigation.common.params.params import Params
 
-params = Params()
-params_capnp = capnp.load('navigation/common/navigation.capnp')
 
 class MapboxIntegration:
   def __init__(self):
-    self.params = params
-    self.params_capnp = params_capnp
+    self.params = Params()
+    self.params_capnp = capnp.load('navigation/common/navigation.capnp')
 
   def get_public_token(self):
-    param_value = self.params.get("MapboxSettings", encoding='bytes')
-    if param_value:
-      with self.params_capnp.MapboxSettings.from_bytes(param_value) as settings:
-        token = settings.publicKey
-        return token.strip() if token else None
-    return None
+    token = self.params.get("MapboxToken", encoding='utf8')
+    return token
 
   def get_last_longitude_latitude(self):
     param_value = self.params.get("MapboxSettings", encoding='bytes')
@@ -76,7 +70,6 @@ class MapboxIntegration:
       settings = self.params_capnp.MapboxSettings.new_message()
       if param_value:
         with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
-          settings.publicKey = existing.publicKey
           settings.lastGPSPosition.longitude = existing.lastGPSPosition.longitude
           settings.lastGPSPosition.latitude = existing.lastGPSPosition.latitude
           settings.navData.current.latitude = existing.navData.current.latitude
@@ -142,7 +135,6 @@ class MapboxIntegration:
     settings = self.params_capnp.MapboxSettings.new_message()
     if param_value:
       with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
-        settings.publicKey = existing.publicKey
         settings.navData.current.latitude = existing.navData.current.latitude
         settings.navData.current.longitude = existing.navData.current.longitude
         settings.navData.current.placeName = existing.navData.current.placeName
@@ -174,7 +166,7 @@ class MapboxIntegration:
     if not data.get('routes'):
       return None
     route = data['routes'][0]
-    legs = route['legs'][0]  # Assuming one leg
+    legs = route['legs'][0]
     steps = []
     for step in legs['steps']:
       maneuver = step['maneuver']['type']

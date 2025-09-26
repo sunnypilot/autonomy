@@ -102,7 +102,7 @@ done
 RUN=$([ -z "$RUN" ] && echo "" || echo "!($(echo $RUN | sed 's/ /|/g'))")
 SKIP="@($(echo $SKIP | sed 's/ /|/g'))"
 
-GIT_FILES="$(git ls-files | grep -E -v "uv\.lock|LICENSE\.md" || true)"
+GIT_FILES="$(git ls-files | grep -E -v "uv\.lock|LICENSE\.md|.*\.mp4" || true)"
 ALL_FILES=""
 for f in $GIT_FILES; do
   if [[ -f $f ]]; then

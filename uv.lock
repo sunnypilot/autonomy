@@ -110,27 +110,29 @@ source = { editable = "." }
 dependencies = [
     { name = "cartopy" },
     { name = "contextily" },
+    { name = "hypothesis" },
+    { name = "matplotlib" },
+    { name = "pycapnp" },
+    { name = "requests" },
+    { name = "types-requests" },
+]
+
+[package.optional-dependencies]
+dev = [
     { name = "datasets" },
     { name = "dearpygui" },
     { name = "einops" },
     { name = "einx" },
-    { name = "folium" },
-    { name = "hypothesis" },
-    { name = "matplotlib" },
     { name = "numpy" },
     { name = "onnx" },
     { name = "onnxruntime" },
     { name = "opencv-python-headless" },
     { name = "panda3d" },
-    { name = "pycapnp" },
-    { name = "requests" },
     { name = "torch" },
     { name = "torchvision" },
     { name = "ultralytics" },
     { name = "vector-quantize-pytorch" },
 ]
-
-[package.optional-dependencies]
 testing = [
     { name = "codespell" },
     { name = "mypy" },
@@ -151,19 +153,18 @@ requires-dist = [
     { name = "cartopy" },
     { name = "codespell", marker = "extra == 'testing'" },
     { name = "contextily" },
-    { name = "datasets", specifier = "==4.0.0" },
-    { name = "dearpygui", specifier = ">=2.1.0" },
-    { name = "einops", specifier = ">=0.8.0" },
-    { name = "einx", specifier = ">=0.3.0" },
-    { name = "folium" },
+    { name = "datasets", marker = "extra == 'dev'", specifier = "==4.0.0" },
+    { name = "dearpygui", marker = "extra == 'dev'", specifier = ">=2.1.0" },
+    { name = "einops", marker = "extra == 'dev'", specifier = ">=0.8.0" },
+    { name = "einx", marker = "extra == 'dev'", specifier = ">=0.3.0" },
     { name = "hypothesis", specifier = "==6.47.*" },
     { name = "matplotlib" },
     { name = "mypy", marker = "extra == 'testing'" },
-    { name = "numpy", specifier = ">=2.0" },
-    { name = "onnx", specifier = ">=1.14.0" },
-    { name = "onnxruntime" },
-    { name = "opencv-python-headless" },
-    { name = "panda3d" },
+    { name = "numpy", marker = "extra == 'dev'", specifier = ">=2.0" },
+    { name = "onnx", marker = "extra == 'dev'", specifier = ">=1.14.0" },
+    { name = "onnxruntime", marker = "extra == 'dev'" },
+    { name = "opencv-python-headless", marker = "extra == 'dev'" },
+    { name = "panda3d", marker = "extra == 'dev'" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "pycapnp" },
     { name = "pytest", marker = "extra == 'testing'" },
@@ -176,24 +177,13 @@ requires-dist = [
     { name = "pytest-timeout", marker = "extra == 'testing'" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
-    { name = "torch", specifier = ">=2.3.0" },
-    { name = "torchvision", specifier = ">=0.18.0" },
-    { name = "ultralytics" },
-    { name = "vector-quantize-pytorch" },
+    { name = "torch", marker = "extra == 'dev'", specifier = ">=2.3.0" },
+    { name = "torchvision", marker = "extra == 'dev'", specifier = ">=0.18.0" },
+    { name = "types-requests" },
+    { name = "ultralytics", marker = "extra == 'dev'" },
+    { name = "vector-quantize-pytorch", marker = "extra == 'dev'" },
 ]
-provides-extras = ["testing"]
-
-[[package]]
-name = "branca"
-version = "0.8.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jinja2" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/1d/bec5cb6669b7bf98b632b20bbbb25200bdc44298e7a39d588b0028a78300/branca-0.8.1.tar.gz", hash = "sha256:ac397c2d79bd13af0d04193b26d5ed17031d27609a7f1fab50c438b8ae712390", size = 27743, upload-time = "2024-12-16T20:29:46.853Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f8/9d/91cddd38bd00170aad1a4b198c47b4ed716be45c234e09b835af41f4e717/branca-0.8.1-py3-none-any.whl", hash = "sha256:d29c5fab31f7c21a92e34bf3f854234e29fecdcf5d2df306b616f20d816be425", size = 26071, upload-time = "2024-12-16T20:29:43.692Z" },
-]
+provides-extras = ["testing", "dev"]
 
 [[package]]
 name = "cartopy"
@@ -591,22 +581,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e4/30/eb5dce7994fc71a2f685d98ec33cc660c0a5887db5610137e60d8cbc4489/flatbuffers-25.2.10.tar.gz", hash = "sha256:97e451377a41262f8d9bd4295cc836133415cc03d8cb966410a4af92eb00d26e", size = 22170, upload-time = "2025-02-11T04:26:46.257Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/25/155f9f080d5e4bc0082edfda032ea2bc2b8fab3f4d25d46c1e9dd22a1a89/flatbuffers-25.2.10-py2.py3-none-any.whl", hash = "sha256:ebba5f4d5ea615af3f7fd70fc310636fbb2bbd1f566ac0a23d98dd412de50051", size = 30953, upload-time = "2025-02-11T04:26:44.484Z" },
-]
-
-[[package]]
-name = "folium"
-version = "0.20.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "branca" },
-    { name = "jinja2" },
-    { name = "numpy" },
-    { name = "requests" },
-    { name = "xyzservices" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/76/84a1b1b00ce71f9c0c44af7d80f310c02e2e583591fe7d4cb03baecd0d3f/folium-0.20.0.tar.gz", hash = "sha256:a0d78b9d5a36ba7589ca9aedbd433e84e9fcab79cd6ac213adbcff922e454cb9", size = 109932, upload-time = "2025-06-16T20:22:51.803Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b5/a8/5f764f333204db0390362a4356d03a43626997f26818a0e9396f1b3bd8c9/folium-0.20.0-py2.py3-none-any.whl", hash = "sha256:f0bc2a92acde20bca56367aa5c1c376c433f450608d058daebab2fc9bf8198bf", size = 113394, upload-time = "2025-06-16T20:22:50.318Z" },
 ]
 
 [[package]]
@@ -2392,6 +2366,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/66/b1eb52839f563623d185f0927eb3530ee4d5ffe9d377cdaf5346b306689e/triton-3.4.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:31c1d84a5c0ec2c0f8e8a072d7fd150cab84a9c239eaddc6706c081bfae4eb04", size = 155560068, upload-time = "2025-07-30T19:58:37.081Z" },
     { url = "https://files.pythonhosted.org/packages/30/7b/0a685684ed5322d2af0bddefed7906674f67974aa88b0fae6e82e3b766f6/triton-3.4.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:00be2964616f4c619193cb0d1b29a99bd4b001d7dc333816073f92cf2a8ccdeb", size = 155569223, upload-time = "2025-07-30T19:58:44.017Z" },
     { url = "https://files.pythonhosted.org/packages/20/63/8cb444ad5cdb25d999b7d647abac25af0ee37d292afc009940c05b82dda0/triton-3.4.0-cp313-cp313t-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7936b18a3499ed62059414d7df563e6c163c5e16c3773678a3ee3d417865035d", size = 155659780, upload-time = "2025-07-30T19:58:51.171Z" },
+]
+
+[[package]]
+name = "types-requests"
+version = "2.32.4.20250913"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/36/27/489922f4505975b11de2b5ad07b4fe1dca0bca9be81a703f26c5f3acfce5/types_requests-2.32.4.20250913.tar.gz", hash = "sha256:abd6d4f9ce3a9383f269775a9835a4c24e5cd6b9f647d64f88aa4613c33def5d", size = 23113, upload-time = "2025-09-13T02:40:02.309Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/20/9a227ea57c1285986c4cf78400d0a91615d25b24e257fd9e2969606bdfae/types_requests-2.32.4.20250913-py3-none-any.whl", hash = "sha256:78c9c1fffebbe0fa487a418e0fa5252017e9c60d1a2da394077f1780f655d7e1", size = 20658, upload-time = "2025-09-13T02:40:01.115Z" },
 ]
 
 [[package]]
