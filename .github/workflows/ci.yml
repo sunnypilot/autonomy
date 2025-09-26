@@ -9,6 +9,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sunnypilot/autonomy:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
     - uses: actions/checkout@v4
@@ -16,14 +21,15 @@ jobs:
         lfs: true
         fetch-depth: 1
 
-    - name: Log in to GitHub Container Registry
-      run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
     - name: Run lint
       run: |
-        docker run --rm -v $PWD:/__w/autonomy/autonomy -w /__w/autonomy/autonomy ghcr.io/sunnypilot/autonomy:latest ./tools/scripts/lint.sh
+        git config --global --add safe.directory $PWD
+        ./tools/scripts/lint.sh
 
     - name: Run tests
       run: |
-        docker run --rm -v $PWD:/__w/autonomy/autonomy -w /__w/autonomy/autonomy ghcr.io/sunnypilot/autonomy:latest bash -c "if find . -name 'test_*.py' -o -name '*_test.py' | grep -q .; then pytest -v; else echo 'No test files found, skipping...'; fi"
+        if find . -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+          pytest -v
+        else
+          echo "No test files found, skipping..."
+        fi
