@@ -31,6 +31,8 @@ testing = [
     "pytest-mock",
     "pytest-repeat",
     "ruff",
+    "mutmut",
+    "jq",
 ]
 dev = [
     "einops>=0.8.0",
@@ -70,3 +72,11 @@ implicit_optional = true
 local_partial_types=true
 explicit_package_bases=true
 disable_error_code = "annotation-unchecked"
+
+[tool.pytest]
+addopts = "--ignore=mutants"
+
+[tool.mutmut]
+paths_to_mutate = ["navigation"]
+test_command = "pytest -x --tb=short"
+exclude = [".venv", ".venv/**", "/opt/venv", "/opt/venv/**", ".git", ".git/**"]
