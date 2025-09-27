@@ -43,7 +43,7 @@ class Simulator:
    return points
 
  @staticmethod
- def run_simulation(destination, gps_lat=34.16207, gps_lon=-119.19657, interval=0.5):
+ def run_simulation(destination, gps_lat=34.16207, gps_lon=-119.19657, interval=0.01):
    """Run the navigation simulation and return collected data"""
    try:
      # Initialize navigation manager
@@ -61,7 +61,7 @@ class Simulator:
      for index, step in enumerate(route['steps']):
        # Find cumulative for this step
        step_closest_index = min(range(len(route['geometry'])),
-                   key=lambda k: Coordinate(step['location'][1], step['location'][0]).distance_to(Coordinate(route['geometry'][k][1], route['geometry'][k][0])))
+                   key=lambda k: step['location'].distance_to(Coordinate(route['geometry'][k][1], route['geometry'][k][0])))
        turn_cumulative = route['cumulative_distances'][step_closest_index]
        print(f"{index+1}. {step['instruction']} at {step['location']} (cumulative: {turn_cumulative:.1f}m)")
      print()
@@ -183,33 +183,31 @@ class Simulator:
 
    # Plot turn markers, kind of weird
    for step in route['steps']:
-     lon, lat = step['location']
+     lon = step['location'].longitude
+     lat = step['location'].latitude
      axes.scatter([lon], [lat], color='red', s=150, marker='^', label='Turn' if step == route['steps'][0] else "", transform=ccrs.PlateCarree())
 
-   # Initialize vehicle position
+   # set position
    vehicle = axes.scatter([], [], color='green', s=200, marker='o', label='Vehicle', transform=ccrs.PlateCarree())
 
-   # Add text for navigation instructions - larger font
+   # Add text for navigation instructions
    instruction_text = axes.text(0.02, 0.98, '', transform=axes.transAxes,
                                 fontsize=16, verticalalignment='top',
                                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.9))
 
-   # Set labels and title
    axes.set_xlabel('Longitude', fontsize=14)
    axes.set_ylabel('Latitude', fontsize=14)
    axes.set_title('Navigation Simulation', fontsize=18)
-
-   # Set extent with generous padding to cover a large map area
+   
    lon_padding = 0.05  # degrees
    lat_padding = 0.05  # degrees
 
    axes.set_extent([min(lons) - lon_padding, max(lons) + lon_padding,
       min(lats) - lat_padding, max(lats) + lat_padding], crs=ccrs.PlateCarree())
 
-   # Add basemap tile with auto zoom for best quality across the entire route
+   # Add basemap tile from osm
    ctx.add_basemap(axes, crs='EPSG:4326', source=ctx.providers.OpenStreetMap.Mapnik, zoom=16)
 
-   # Add legend
    axes.legend(fontsize=12)
 
    def animate(frame):
@@ -253,17 +251,15 @@ class Simulator:
    parser.add_argument('--destination', required=True, help='Destination address')
    parser.add_argument('--gps-lat', type=float, default=34.23305, help='Initial GPS latitude')
    parser.add_argument('--gps-lon', type=float, default=-119.17557, help='Initial GPS longitude')
-   parser.add_argument('--interval', type=float, default=0.01, help='Update interval in seconds')
    parser.add_argument('--output', type=str, default='navigation/debug/simulation_videos/nav_simulation.mp4', help='Output video file name')
    args = parser.parse_args()
 
    # Run simulation
-   route, simulation_data = cls.run_simulation(args.destination, args.gps_lat, args.gps_lon, args.interval)
+   route, simulation_data = cls.run_simulation(args.destination, args.gps_lat, args.gps_lon)
 
    if not simulation_data:
      return
 
-   # Create map animation
    output_file = cls.create_map_animation(route, simulation_data, args.output)
 
    if output_file:

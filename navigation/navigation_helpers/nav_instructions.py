@@ -11,16 +11,18 @@ class NavigationInstructions:
     self.mapbox = MapboxIntegration()
     self.params = Params()
     self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', 'common', 'navigation.capnp'))
+    self.coord = Coordinate(0, 0)
 
   def get_upcoming_turn(self, current_lat, current_lon) -> str:
     route = self.get_current_route()
     if not route or not route.get('steps'):
       return 'none'
+    self.coord.latitude = current_lat
+    self.coord.longitude = current_lon
     for step in route['steps']:
       turn_dir = str(step.get('turn_direction'))
       if turn_dir and turn_dir != 'none':
-        turn_lat, turn_lon = step['location']
-        distance = Coordinate(current_lat, current_lon).distance_to(Coordinate(turn_lat, turn_lon))
+        distance = self.coord.distance_to(step['location'])
         if distance <= 100:  # Within 100 meters
           return turn_dir
     return 'none'
@@ -31,12 +33,19 @@ class NavigationInstructions:
     if not route or not route.get('geometry') or not route.get('steps'):
       return None
 
+    self.coord.latitude = current_lat
+    self.coord.longitude = current_lon
+
+    temp_coord = Coordinate(0, 0)
+
     # Find closest point on the route polyline
     min_distance = float('inf')
     closest_index = 0
     for i in range(len(route['geometry'])):
       lat, lon = route['geometry'][i][1], route['geometry'][i][0]
-      dist = Coordinate(current_lat, current_lon).distance_to(Coordinate(lat, lon))
+      temp_coord.latitude = lat
+      temp_coord.longitude = lon
+      dist = self.coord.distance_to(temp_coord)
       if dist < min_distance:
         min_distance = dist
         closest_index = i
@@ -45,9 +54,12 @@ class NavigationInstructions:
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
     current_step_index = -1
+    def distance_to_geom(j):
+      temp_coord.latitude = route['geometry'][j][1]
+      temp_coord.longitude = route['geometry'][j][0]
+      return step['location'].distance_to(temp_coord)
     for i, step in enumerate(route['steps']):
-      step_closest_index = min(range(len(route['geometry'])),
-                               key=lambda j: Coordinate(step['location'][1], step['location'][0]).distance_to(Coordinate(route['geometry'][j][1], route['geometry'][j][0])))
+      step_closest_index = min(range(len(route['geometry'])), key=distance_to_geom)
       step_cumulative = route['cumulative_distances'][step_closest_index]
       if step_cumulative <= closest_cumulative:
         current_step_index = i
@@ -64,8 +76,11 @@ class NavigationInstructions:
     next_turn = route['steps'][next_turn_index] if next_turn_index < len(route['steps']) else None
     next_turn_distance = None
     if next_turn:
-      next_step_closest_index = min(range(len(route['geometry'])),
-                                    key=lambda j: Coordinate(next_turn['location'][1], next_turn['location'][0]).distance_to(Coordinate(route['geometry'][j][1], route['geometry'][j][0])))
+      def distance_to_geom_next(j):
+        temp_coord.latitude = route['geometry'][j][1]
+        temp_coord.longitude = route['geometry'][j][0]
+        return next_turn['location'].distance_to(temp_coord)
+      next_step_closest_index = min(range(len(route['geometry'])), key=distance_to_geom_next)
       next_turn_distance = max(0, route['cumulative_distances'][next_step_closest_index] - closest_cumulative)
 
     return {
@@ -91,7 +106,7 @@ class NavigationInstructions:
           'distance': step.distance,
           'duration': step.duration,
           'maneuver': step.maneuver,
-          'location': (step.location.longitude, step.location.latitude),
+          'location': Coordinate(step.location.latitude, step.location.longitude),
           'turn_direction': string_to_direction(step.instruction)
         })
       geometry = [(coord.longitude, coord.latitude) for coord in route.geometry]

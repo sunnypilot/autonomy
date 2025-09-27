@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-import sys
-import time
-import argparse
 
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
+from navigation.navd.helpers import Coordinate
 
 
 class NavManager:
@@ -53,6 +51,16 @@ class NavManager:
     """Update current GPS position"""
     self.mapbox.update_gps_position(longitude, latitude)
 
+  def _parse_step(self, step):
+    """Parse Coordinate objects in step dict to dict format"""
+    if step and 'location' in step and isinstance(step['location'], Coordinate):
+      step = step.copy()
+      step['location'] = {
+        'latitude': step['location'].latitude,
+        'longitude': step['location'].longitude
+      }
+    return step
+
   def update(self, gps_lat=None, gps_lon=None):
     """Update method called at 5Hz (5 frames per second)"""
     self.frame += 1
@@ -97,8 +105,8 @@ class NavManager:
         "total_duration": route['total_duration'] if route else 0
       },
       "progress": progress,
-      "upcoming_turn": progress.get('next_turn') if progress else None,
-      "current_instruction": progress.get('current_step') if progress else None
+      "upcoming_turn": self._parse_step(progress.get('next_turn')) if progress else None,
+      "current_instruction": self._parse_step(progress.get('current_step')) if progress else None
     }
 
     # Convert maxspeed from km/h to mph if present
@@ -110,39 +118,3 @@ class NavManager:
           status['current_maxspeed'] = round(speed_kmh * 0.621371)
 
     return status
-
-def main():
-  parser = argparse.ArgumentParser(description='Navigation Manager')
-  parser.add_argument('--destination', required=True, help='Destination address')
-  parser.add_argument('--gps-lat', type=float, help='Initial GPS latitude')
-  parser.add_argument('--gps-lon', type=float, help='Initial GPS longitude')
-  parser.add_argument('--gps-update-lat', type=float, help='GPS latitude for continuous updates')
-  parser.add_argument('--gps-update-lon', type=float, help='GPS longitude for continuous updates')
-  parser.add_argument('--update-interval', type=int, default=5, help='GPS update interval in seconds')
-
-  args = parser.parse_args()
-
-  # Prepare initial GPS if provided
-  initial_gps = None
-  if args.gps_lat is not None and args.gps_lon is not None:
-    initial_gps = (args.gps_lat, args.gps_lon)
-
-  try:
-    # Initialize navigation manager
-    nav_manager = NavManager(args.destination, initial_gps)
-
-    # Keep running at 5Hz (5 frames per second)
-    while True:
-      # Update at 5Hz (every 0.2 seconds)
-      nav_manager.update(args.gps_update_lat, args.gps_update_lon)
-      time.sleep(0.2)  # 1/5 = 0.2 seconds
-
-  except KeyboardInterrupt:
-    print("\nNavigation manager stopped.")
-  except Exception as e:
-    print(f"Error: {e}")
-    sys.exit(1)
-
-
-if __name__ == "__main__":
-  main()

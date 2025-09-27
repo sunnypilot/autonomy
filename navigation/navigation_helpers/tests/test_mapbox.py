@@ -1,44 +1,38 @@
 import capnp
 import os
 
-from navigation.common.params.params import Params
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
 
 
 class TestMapbox:
   def setup_method(self):
+    self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', '..','common', 'navigation.capnp'))
     self.mapbox = MapboxIntegration()
     self.nav = NavigationInstructions()
-    self.params = Params()
-    self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', '..','common', 'navigation.capnp'))
 
   def test_mapbox_integration(self):
     settings = self.params_capnp.MapboxSettings.new_message()
     settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
     settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
     settings.searchInput = 0
-    self.params.put("MapboxSettings", settings.to_bytes())
+    self.mapbox.params.put("MapboxSettings", settings.to_bytes())
 
     # Update GPS position
     current_lon, current_lat = -119.17557, 34.23305
     self.mapbox.update_gps_position(current_lon, current_lat)
-
-    # location is inputted
     user_input_location = "740 E Ventura Blvd. Camarillo, CA"
-
-    # Prepare the postvars dict
     postvars = {
       "place_name": user_input_location
     }
 
-    # Call set_destination
+    # set destination
     postvars, valid_addr = self.mapbox.set_destination(postvars, False)
 
     # Check result
     assert valid_addr, "Failed to geocode the location."
     print(f"Destination set: {postvars}")
-    stored = self.params.get('MapboxSettings', encoding='bytes')
+    stored = self.mapbox.params.get('MapboxSettings', encoding='bytes')
     assert stored is not None, "MapboxSettings not stored"
     with self.params_capnp.MapboxSettings.from_bytes(stored) as settings:
       dest_lat = settings.navData.current.latitude
@@ -48,7 +42,6 @@ class TestMapbox:
     # Get the route
     route = self.nav.get_current_route()
 
-    # Check route exists and has expected structure
     assert route is not None, "Route should be generated"
     assert 'steps' in route, "Route should have steps"
     assert 'geometry' in route, "Route should have geometry"
@@ -75,7 +68,8 @@ class TestMapbox:
       assert upcoming == 'none', "Should not detect upcoming turn when far from route turns"
 
       if route['steps']:
-        turn_lat, turn_lon = route['steps'][1]['location']
+        turn_lat = route['steps'][1]['location'].latitude
+        turn_lon = route['steps'][1]['location'].longitude
         close_lat = turn_lat + 0.0005  # Approx 50m closer?
         upcoming_close = self.nav.get_upcoming_turn(close_lat, turn_lon)
         print(f"Upcoming turn near turn: {upcoming_close}")
@@ -99,4 +93,3 @@ class TestMapbox:
       assert route['total_duration'] > 0, "Route duration should be positive"
 
       print(f"Route generated: {len(route['steps'])} steps, total distance: {route['total_distance']:.3f}m")
-
