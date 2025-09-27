@@ -23,7 +23,7 @@ class NavManager:
     else:
       # Set a default GPS position near the destination for route generation
       # This will be updated later with real GPS data
-      self.update_gps_position(-119.19657, 34.16207)  # Default position
+      self.update_gps_position(0.0, 0.0)  # Default position
 
     # Set destination and generate route
     self._setup_destination(destination)
@@ -53,9 +53,13 @@ class NavManager:
     """Update current GPS position"""
     self.mapbox.update_gps_position(longitude, latitude)
 
-  def update(self):
+  def update(self, gps_lat=None, gps_lon=None):
     """Update method called at 5Hz (5 frames per second)"""
     self.frame += 1
+
+    # Update GPS position if provided
+    if gps_lat is not None and gps_lon is not None:
+      self.update_gps_position(gps_lon, gps_lat)
 
     # Update params every 3 seconds (15 frames at 5Hz)
     if self.frame % 15 == 0:
@@ -112,6 +116,8 @@ def main():
   parser.add_argument('--destination', required=True, help='Destination address')
   parser.add_argument('--gps-lat', type=float, help='Initial GPS latitude')
   parser.add_argument('--gps-lon', type=float, help='Initial GPS longitude')
+  parser.add_argument('--gps-update-lat', type=float, help='GPS latitude for continuous updates')
+  parser.add_argument('--gps-update-lon', type=float, help='GPS longitude for continuous updates')
   parser.add_argument('--update-interval', type=int, default=5, help='GPS update interval in seconds')
 
   args = parser.parse_args()
@@ -128,7 +134,7 @@ def main():
     # Keep running at 5Hz (5 frames per second)
     while True:
       # Update at 5Hz (every 0.2 seconds)
-      nav_manager.update()
+      nav_manager.update(args.gps_update_lat, args.gps_update_lon)
       time.sleep(0.2)  # 1/5 = 0.2 seconds
 
   except KeyboardInterrupt:

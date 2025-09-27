@@ -71,8 +71,8 @@ class TestMapbox:
       # Test upcoming turn
       upcoming = self.nav.get_upcoming_turn(current_lat, current_lon)
       assert isinstance(upcoming, str), "Upcoming turn should be a string"
-      print(f"Upcoming turn at start: {upcoming}")  # should be 'None' as starting coordinates are away from any turn
-      assert upcoming == 'None', "Should not detect upcoming turn when far from route turns"
+      print(f"Upcoming turn at start: {upcoming}")  # should be 'none' as starting coordinates are away from any turn
+      assert upcoming == 'none', "Should not detect upcoming turn when far from route turns"
 
       if route['steps']:
         turn_lat, turn_lon = route['steps'][1]['location']
@@ -82,7 +82,7 @@ class TestMapbox:
 
         # Assert correct turn direction detected when close. Should be 'right' for second step in this route
         expected_turn = route['steps'][1]['turn_direction']
-        if expected_turn != 'None':  # Only assert if there's actually a turn
+        if expected_turn != 'none':  # Only assert if there's actually a turn
           assert upcoming_close == expected_turn == 'right', f"Should detect '{expected_turn}' turn when close to turn location"
 
       # Test route progress tracking

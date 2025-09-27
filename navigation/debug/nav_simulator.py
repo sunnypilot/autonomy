@@ -7,16 +7,14 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-from navigation.navigation_helpers.nav_instructions import NavigationInstructions
 from navigation.nav_manager import NavManager
+from navigation.navd.helpers import Coordinate
 
 
 class Simulator:
  @staticmethod
  def interpolate_route_points(route_geometry, interval_meters=100):
    """Interpolate points along the route at 100m (or specified) intervals"""
-   nav_instructions = NavigationInstructions()
-   haversine_distance = nav_instructions.haversine_distance
 
    if not route_geometry or len(route_geometry) < 2:
      return []
@@ -29,7 +27,7 @@ class Simulator:
      lat1, lon1 = route_geometry[idx][1], route_geometry[idx][0]
      lat2, lon2 = route_geometry[idx+1][1], route_geometry[idx+1][0]
 
-     segment_distance = haversine_distance(lat1, lon1, lat2, lon2)
+     segment_distance = Coordinate(lat1, lon1).distance_to(Coordinate(lat2, lon2))
 
      while next_target <= total_distance + segment_distance:
        remaining = next_target - total_distance
@@ -63,8 +61,7 @@ class Simulator:
      for index, step in enumerate(route['steps']):
        # Find cumulative for this step
        step_closest_index = min(range(len(route['geometry'])),
-                   key=lambda k: nav_manager.nav.haversine_distance(step['location'][1], step['location'][0],
-                   route['geometry'][k][1], route['geometry'][k][0]))
+                   key=lambda k: Coordinate(step['location'][1], step['location'][0]).distance_to(Coordinate(route['geometry'][k][1], route['geometry'][k][0])))
        turn_cumulative = route['cumulative_distances'][step_closest_index]
        print(f"{index+1}. {step['instruction']} at {step['location']} (cumulative: {turn_cumulative:.1f}m)")
      print()
@@ -232,8 +229,8 @@ class Simulator:
               current_lat - zoom_level, current_lat + zoom_level], crs=ccrs.PlateCarree())
 
        # Update navigation instruction text
-       current_instruction = data['current_instruction']['instruction'] if data['current_instruction'] else 'None'
-       next_turn = data['upcoming_turn']['instruction'] if data['upcoming_turn'] else 'None'
+       current_instruction = data['current_instruction']['instruction'] if data['current_instruction'] else 'none'
+       next_turn = data['upcoming_turn']['instruction'] if data['upcoming_turn'] else 'none'
        progress = data['progress'].get('route_progress_percent', 0) if data['progress'] else 0
        max_speed = data['current_maxspeed'] or 'N/A'
 

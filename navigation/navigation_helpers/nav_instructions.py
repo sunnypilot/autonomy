@@ -1,9 +1,9 @@
 import capnp
-import math
 import os
 
 from navigation.common.params.params import Params
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
+from navigation.navd.helpers import Coordinate, string_to_direction
 
 
 class NavigationInstructions:
@@ -12,27 +12,18 @@ class NavigationInstructions:
     self.params = Params()
     self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', 'common', 'navigation.capnp'))
 
-  def haversine_distance(self, lat1, lon1, lat2, lon2):
-    # Radius of Earth in meters
-    R = 6_371_000
-    dlat = math.radians(lat2 - lat1)
-    dlon = math.radians(lon2 - lon1)
-    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
-
   def get_upcoming_turn(self, current_lat, current_lon) -> str:
     route = self.get_current_route()
     if not route or not route.get('steps'):
-      return 'None'
+      return 'none'
     for step in route['steps']:
       turn_dir = str(step.get('turn_direction'))
-      if turn_dir and turn_dir != 'None':
+      if turn_dir and turn_dir != 'none':
         turn_lat, turn_lon = step['location']
-        distance = self.haversine_distance(current_lat, current_lon, turn_lat, turn_lon)
+        distance = Coordinate(current_lat, current_lon).distance_to(Coordinate(turn_lat, turn_lon))
         if distance <= 100:  # Within 100 meters
           return turn_dir
-    return 'None'
+    return 'none'
 
   def get_route_progress(self, current_lat, current_lon):
     """Get current position on route and distance to next turn"""
@@ -45,7 +36,7 @@ class NavigationInstructions:
     closest_index = 0
     for i in range(len(route['geometry'])):
       lat, lon = route['geometry'][i][1], route['geometry'][i][0]
-      dist = self.haversine_distance(current_lat, current_lon, lat, lon)
+      dist = Coordinate(current_lat, current_lon).distance_to(Coordinate(lat, lon))
       if dist < min_distance:
         min_distance = dist
         closest_index = i
@@ -56,8 +47,7 @@ class NavigationInstructions:
     current_step_index = -1
     for i, step in enumerate(route['steps']):
       step_closest_index = min(range(len(route['geometry'])),
-                               key=lambda j: self.haversine_distance(step['location'][1], step['location'][0],
-                                                                     route['geometry'][j][1], route['geometry'][j][0]))
+                               key=lambda j: Coordinate(step['location'][1], step['location'][0]).distance_to(Coordinate(route['geometry'][j][1], route['geometry'][j][0])))
       step_cumulative = route['cumulative_distances'][step_closest_index]
       if step_cumulative <= closest_cumulative:
         current_step_index = i
@@ -75,8 +65,7 @@ class NavigationInstructions:
     next_turn_distance = None
     if next_turn:
       next_step_closest_index = min(range(len(route['geometry'])),
-                                    key=lambda j: self.haversine_distance(next_turn['location'][1], next_turn['location'][0],
-                                                                         route['geometry'][j][1], route['geometry'][j][0]))
+                                    key=lambda j: Coordinate(next_turn['location'][1], next_turn['location'][0]).distance_to(Coordinate(route['geometry'][j][1], route['geometry'][j][0])))
       next_turn_distance = max(0, route['cumulative_distances'][next_step_closest_index] - closest_cumulative)
 
     return {
@@ -88,23 +77,6 @@ class NavigationInstructions:
       'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100,
       'current_maxspeed': current_maxspeed
     }
-
-  def closest_point_on_segment(self, lat, lon, lat1, lon1, lat2, lon2):
-    # Approximate closest point on segment in lat/lon space
-    dx = lat2 - lat1
-    dy = lon2 - lon1
-    dxp = lat - lat1
-    dyp = lon - lon1
-    dot = dxp * dx + dyp * dy
-    len_sq = dx * dx + dy * dy
-    if len_sq == 0:
-      return lat1, lon1, self.haversine_distance(lat, lon, lat1, lon1)
-    param = dot / len_sq
-    param = max(0, min(1, param))
-    closest_lat = lat1 + param * dx
-    closest_lon = lon1 + param * dy
-    dist = self.haversine_distance(lat, lon, closest_lat, closest_lon)
-    return closest_lat, closest_lon, dist
 
   def get_current_route(self):
     param_value = self.params.get("MapboxSettings", encoding='bytes')
@@ -120,12 +92,14 @@ class NavigationInstructions:
           'duration': step.duration,
           'maneuver': step.maneuver,
           'location': (step.location.longitude, step.location.latitude),
-          'turn_direction': self.mapbox.extract_turn_direction(step.instruction)
+          'turn_direction': string_to_direction(step.instruction)
         })
       geometry = [(coord.longitude, coord.latitude) for coord in route.geometry]
       cumulative_distances = [0.0]
       for j in range(1, len(geometry)):
-        dist = self.haversine_distance(geometry[j-1][1], geometry[j-1][0], geometry[j][1], geometry[j][0])
+        coord1 = Coordinate(geometry[j-1][1], geometry[j-1][0])
+        coord2 = Coordinate(geometry[j][1], geometry[j][0])
+        dist = coord1.distance_to(coord2)
         cumulative_distances.append(cumulative_distances[-1] + dist)
       maxspeed = [(ms.speed, ms.unit) for ms in route.maxspeed]
       return {

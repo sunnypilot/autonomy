@@ -3,6 +3,7 @@ import capnp
 from urllib.parse import quote
 import requests
 from navigation.common.params.params import Params
+from navigation.navd.helpers import string_to_direction
 
 
 class MapboxIntegration:
@@ -180,7 +181,7 @@ class MapboxIntegration:
         'distance': distance,
         'duration': duration,
         'location': location,
-        'turn_direction': self.extract_turn_direction(instruction)
+        'turn_direction': string_to_direction(instruction)
       })
     maxspeed_list = legs.get('annotation', {}).get('maxspeed', [])
     maxspeed = []
@@ -195,11 +196,3 @@ class MapboxIntegration:
       'geometry': route['geometry']['coordinates'],
       'maxspeed': maxspeed
     }
-
-  def extract_turn_direction(self, instruction):
-    if 'Turn left' in instruction:
-      return 'left'
-    elif 'Turn right' in instruction:
-      return 'right'
-    else:
-      return 'None'
