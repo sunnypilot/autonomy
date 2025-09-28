@@ -15,6 +15,8 @@ RUN apt update && apt install -y \
     portaudio19-dev \
     gcc-13 \
     curl \
+    libgdal-dev \
+    jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv and create virtual environment
@@ -25,11 +27,8 @@ ENV PATH="/opt/venv/bin:/root/.local/bin:$PATH"
 # Set working directory
 WORKDIR /__w/autonomy/autonomy
 
-# Copy dependency files
+# Copy dependencies
 COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies
+# Install dependencies
 RUN bash -c ". /opt/venv/bin/activate && uv pip install -e .[testing]"
-
-# Default command
-CMD ["bash"]

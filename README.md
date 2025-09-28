@@ -28,7 +28,7 @@ After running the script, activate the virtual environment in your shell:
 
 - `navigation`: module containing mapbox navigation features created to be transitioned to sunnypilot as a semi-offline navigation naemon. This module will map turn desires, keep left/right, and eventually auto lane changes to navigation instructions to provide a more comfortable user experience.
 
-- `tools`: setup scripts and basic lint tests.
+- `tools`: setup scripts and test runners. 
 
 ## Contributing
 
