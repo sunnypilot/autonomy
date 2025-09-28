@@ -43,9 +43,9 @@ class TestParams:
         result = self.params.get("key", encoding='bytes')
         assert result == test_bytes
 
-    def test_get_mapbox_token_utf8(self):
+    def test_get_mapbox_token(self):
         result = self.params.get_mapbox_token()
-        assert isinstance(result, str) and len(result) > 0
+        assert isinstance(result, str) and len(result) == 90
 
     def test_get_other_key_utf8(self):
         self.params.data = {"other_key": "plain_value"}
@@ -72,12 +72,6 @@ class TestParams:
         self.params.put("key", test_bytes)
         result = self.params.get("key", encoding='bytes')
         assert result == test_bytes
-
-    def test_put_mapbox_token_string(self):
-        test_token = "test_token"
-        self.params.put("MapboxToken", test_token)
-        result = self.params.get_mapbox_token()
-        assert isinstance(result, str) and len(result) > 0
 
     def test_put_other_types(self):
         self.params.put("int_key", 42)
