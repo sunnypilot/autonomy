@@ -4,10 +4,8 @@ import base64
 
 
 class Params:
-  def __init__(self, storage_file=None):
-    if storage_file is None:
-      storage_file = os.path.join(os.path.dirname(__file__), 'params.json')
-    self.storage_file = storage_file
+  def __init__(self):
+    self.storage_file = os.path.join(os.path.dirname(__file__), 'params.json')
     self.data = {}
     self.load()
 
