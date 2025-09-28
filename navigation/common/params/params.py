@@ -2,13 +2,15 @@ import os
 import json
 import base64
 import ctypes
+import platform
 
 
 class Params:
   def __init__(self):
     self.storage_file = os.path.join(os.path.dirname(__file__), 'params.json')
 
-    lib_path = os.path.join(os.path.dirname(__file__), 'libmapbox_token.dylib')
+    lib_name = 'libmapbox_token.dylib' if platform.system() == 'Darwin' else 'libmapbox_token.so'
+    lib_path = os.path.join(os.path.dirname(__file__), lib_name)
     self.lib = ctypes.CDLL(lib_path)
     self.lib.decrypt_mapbox_data.argtypes = [ctypes.c_char_p, ctypes.c_int]
     self.lib.decrypt_mapbox_data.restype = ctypes.c_char_p
