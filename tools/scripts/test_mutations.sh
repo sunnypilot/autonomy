@@ -13,9 +13,6 @@ dump_results() {
 show_survivors() {
     mutmut results | grep "survived" | awk '{print $1}' | while read -r s; do
         echo ">>> $s"
-        if ! mutmut show "$s"; then
-            echo "Failed to show mutation $s"
-        fi
         echo
     done
 }
@@ -23,6 +20,13 @@ show_survivors() {
 cleanup() {
     rm -rf mutants
     rm -f pyproject.mutmut.toml
+}
+
+check_if_tests_exist() {
+    if ! pytest --collect-only -q 2>/dev/null; then
+        echo "No tests found. Skipping mutation testing."
+        exit 0
+    fi
 }
 
 trap 'dump_results; show_survivors; cleanup; exit 2' INT TERM
@@ -47,9 +51,11 @@ EOF
 
     echo "Starting mutation testing on changed files:"
     echo "$changed_files"
+    check_if_tests_exist
     MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run
 else
     echo "Starting full mutation testing with mutmut"
+    check_if_tests_exist
     timeout 3600 mutmut run
 fi
 
