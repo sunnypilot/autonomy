@@ -1,11 +1,16 @@
 import os
 import json
 import base64
+import ctypes
 
 
 class Params:
   def __init__(self):
     self.storage_file = os.path.join(os.path.dirname(__file__), 'params.json')
+    lib_path = os.path.join(os.path.dirname(__file__), 'libmapbox_token.dylib')
+    self.lib = ctypes.CDLL(lib_path)
+    self.lib.get_mapbox_token.argtypes = []
+    self.lib.get_mapbox_token.restype = ctypes.c_char_p
     self.data = {}
     self.load()
 
@@ -25,14 +30,15 @@ class Params:
       pass
 
   def get(self, key, encoding=None):
+    if key == "MapboxToken" and encoding == 'utf8':
+      result_ptr = self.lib.get_mapbox_token()
+      return result_ptr.decode('utf-8')
     value = self.data.get(key)
     if value is None:
       return None
     if isinstance(value, str) and encoding == 'bytes':
       return base64.b64decode(value)
     if encoding == 'utf8':
-      if key == "MapboxToken":
-        return base64.b64decode(value).decode('utf-8')
       return value
     return value
 
@@ -46,8 +52,6 @@ class Params:
       return 0
 
   def put(self, key, value):
-    if key == "MapboxToken" and isinstance(value, str):
-      value = value.encode('utf-8')
     if isinstance(value, bytes):
       self.data[key] = base64.b64encode(value).decode('utf-8')
     else:
