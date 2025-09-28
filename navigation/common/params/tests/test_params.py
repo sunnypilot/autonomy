@@ -15,50 +15,44 @@ class TestParams:
         self.temp_dir.cleanup()
 
     def test_init_default_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            params_file = os.path.join(temp_dir, 'params.json')
-            params = Params(params_file)
-            assert params.storage_file == params_file
-            assert params.data == {}
+        params_file = os.path.join(self.temp_dir.name, 'params.json')
+        params = Params(params_file)
+        assert params.storage_file == params_file
+        assert params.data == {}
 
     def test_init_custom_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            custom_file = os.path.join(temp_dir, 'custom.json')
-            params = Params(custom_file)
-            assert params.storage_file == custom_file
+        custom_file = os.path.join(self.temp_dir.name, 'custom.json')
+        params = Params(custom_file)
+        assert params.storage_file == custom_file
 
     def test_load_existing_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            params_file = os.path.join(temp_dir, 'params.json')
-            test_data = {"key1": "value1", "key2": 42}
-            with open(params_file, 'w') as f:
-                json.dump(test_data, f)
-            params = Params(params_file)
-            assert params.data == test_data
+        params_file = os.path.join(self.temp_dir.name, 'params.json')
+        test_data = {"key1": "value1", "key2": 42}
+        with open(params_file, 'w') as f:
+            json.dump(test_data, f)
+        params = Params(params_file)
+        assert params.data == test_data
 
     def test_load_nonexistent_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            params_file = os.path.join(temp_dir, 'nonexistent.json')
-            params = Params(params_file)
-            assert params.data == {}
+        params_file = os.path.join(self.temp_dir.name, 'nonexistent.json')
+        params = Params(params_file)
+        assert params.data == {}
 
     def test_load_invalid_json(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            params_file = os.path.join(temp_dir, 'invalid.json')
-            with open(params_file, 'w') as f:
-                f.write("invalid json")
-            params = Params(params_file)
-            assert params.data == {}
+        params_file = os.path.join(self.temp_dir.name, 'invalid.json')
+        with open(params_file, 'w') as f:
+            f.write("invalid json")
+        params = Params(params_file)
+        assert params.data == {}
 
     def test_save(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            params_file = os.path.join(temp_dir, 'params.json')
-            params = Params(params_file)
-            params.data = {"key": "value"}
-            params.save()
-            with open(params_file, 'r') as f:
-                saved_data = json.load(f)
-            assert saved_data == {"key": "value"}
+        params_file = os.path.join(self.temp_dir.name, 'params.json')
+        params = Params(params_file)
+        params.data = {"key": "value"}
+        params.save()
+        with open(params_file, 'r') as f:
+            saved_data = json.load(f)
+        assert saved_data == {"key": "value"}
 
     def test_get_existing_key(self):
         self.params.data = {"key": "value"}
