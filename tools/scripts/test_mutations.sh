@@ -13,9 +13,6 @@ dump_results() {
 show_survivors() {
     mutmut results | grep "survived" | awk '{print $1}' | while read -r s; do
         echo ">>> $s"
-        if ! mutmut show "$s"; then
-            echo "Failed to show mutation $s"
-        fi
         echo
     done
 }
@@ -55,11 +52,11 @@ EOF
     echo "Starting mutation testing on changed files:"
     echo "$changed_files"
     check_if_tests_exist
-    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 4
 else
     echo "Starting full mutation testing with mutmut"
     check_if_tests_exist
-    timeout 3600 mutmut run
+    timeout 3600 mutmut run --max-children 4
 fi
 
 echo "Mutation testing done"
