@@ -14,6 +14,9 @@ RUN apt update && apt install -y \
     gcc-arm-none-eabi \
     portaudio19-dev \
     gcc-13 \
+    g++ \
+    clang \
+    libssl-dev \
     curl \
     libgdal-dev \
     jq \
