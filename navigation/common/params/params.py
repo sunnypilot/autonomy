@@ -7,10 +7,15 @@ import ctypes
 class Params:
   def __init__(self):
     self.storage_file = os.path.join(os.path.dirname(__file__), 'params.json')
+
     lib_path = os.path.join(os.path.dirname(__file__), 'libmapbox_token.dylib')
     self.lib = ctypes.CDLL(lib_path)
-    self.lib.get_mapbox_token.argtypes = []
-    self.lib.get_mapbox_token.restype = ctypes.c_char_p
+    self.lib.decrypt_mapbox_data.argtypes = [ctypes.c_char_p, ctypes.c_int]
+    self.lib.decrypt_mapbox_data.restype = ctypes.c_char_p
+    for func_name in ['get_mapbox_token', 'get_encrypted_mapbox_token']:
+      getattr(self.lib, func_name).argtypes = []
+      getattr(self.lib, func_name).restype = ctypes.c_char_p
+    
     self.data = {}
     self.load()
 
@@ -30,9 +35,6 @@ class Params:
       pass
 
   def get(self, key, encoding=None):
-    if key == "MapboxToken" and encoding == 'utf8':
-      result_ptr = self.lib.get_mapbox_token()
-      return result_ptr.decode('utf-8')
     value = self.data.get(key)
     if value is None:
       return None
@@ -57,3 +59,7 @@ class Params:
     else:
       self.data[key] = value
     self.save()
+
+  def get_mapbox_token(self):
+    result_ptr = self.lib.get_mapbox_token()
+    return result_ptr.decode('utf-8')

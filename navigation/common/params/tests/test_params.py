@@ -44,9 +44,7 @@ class TestParams:
         assert result == test_bytes
 
     def test_get_mapbox_token_utf8(self):
-        test_token = "test_token"
-        self.params.put("MapboxToken", test_token)
-        result = self.params.get("MapboxToken", encoding='utf8')
+        result = self.params.get_mapbox_token()
         assert isinstance(result, str) and len(result) > 0
 
     def test_get_other_key_utf8(self):
@@ -78,7 +76,7 @@ class TestParams:
     def test_put_mapbox_token_string(self):
         test_token = "test_token"
         self.params.put("MapboxToken", test_token)
-        result = self.params.get("MapboxToken", encoding='utf8')
+        result = self.params.get_mapbox_token()
         assert isinstance(result, str) and len(result) > 0
 
     def test_put_other_types(self):
