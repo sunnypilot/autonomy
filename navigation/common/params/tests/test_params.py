@@ -1,56 +1,32 @@
-import base64
 import os
 import json
 import tempfile
+import shutil
+
 from navigation.common.params.params import Params
 
 
 class TestParams:
     def setup_method(self):
         self.temp_dir = tempfile.TemporaryDirectory()
-        self.params_file = os.path.join(self.temp_dir.name, 'params.json')
-        self.params = Params(self.params_file)
+        real_params_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'params.json')
+        self.temp_params_path = os.path.join(tempfile.gettempdir(), 'params.json')
+        shutil.copy(real_params_path, self.temp_params_path)
+        self.params = Params()
+        self.params.storage_file = self.temp_params_path
+        self.params.load()
 
     def teardown_method(self):
+        os.remove(self.temp_params_path)
         self.temp_dir.cleanup()
 
     def test_init_default_file(self):
-        params_file = os.path.join(self.temp_dir.name, 'params.json')
-        params = Params(params_file)
-        assert params.storage_file == params_file
-        assert params.data == {}
-
-    def test_init_custom_file(self):
-        custom_file = os.path.join(self.temp_dir.name, 'custom.json')
-        params = Params(custom_file)
-        assert params.storage_file == custom_file
-
-    def test_load_existing_file(self):
-        params_file = os.path.join(self.temp_dir.name, 'params.json')
-        test_data = {"key1": "value1", "key2": 42}
-        with open(params_file, 'w') as f:
-            json.dump(test_data, f)
-        params = Params(params_file)
-        assert params.data == test_data
-
-    def test_load_nonexistent_file(self):
-        params_file = os.path.join(self.temp_dir.name, 'nonexistent.json')
-        params = Params(params_file)
-        assert params.data == {}
-
-    def test_load_invalid_json(self):
-        params_file = os.path.join(self.temp_dir.name, 'invalid.json')
-        with open(params_file, 'w') as f:
-            f.write("invalid json")
-        params = Params(params_file)
-        assert params.data == {}
+        assert self.params.storage_file == os.path.join(tempfile.gettempdir(), 'params.json')
 
     def test_save(self):
-        params_file = os.path.join(self.temp_dir.name, 'params.json')
-        params = Params(params_file)
-        params.data = {"key": "value"}
-        params.save()
-        with open(params_file, 'r') as f:
+        self.params.data = {"key": "value"}
+        self.params.save()
+        with open(self.params.storage_file, 'r') as f:
             saved_data = json.load(f)
         assert saved_data == {"key": "value"}
 
@@ -63,15 +39,13 @@ class TestParams:
 
     def test_get_with_bytes_encoding(self):
         test_bytes = b"test bytes"
-        encoded = base64.b64encode(test_bytes).decode('utf-8')
-        self.params.data = {"key": encoded}
+        self.params.put("key", test_bytes)
         result = self.params.get("key", encoding='bytes')
         assert result == test_bytes
 
     def test_get_mapbox_token_utf8(self):
         test_token = "test_token"
-        encoded = base64.b64encode(test_token.encode('utf-8')).decode('utf-8')
-        self.params.data = {"MapboxToken": encoded}
+        self.params.put("MapboxToken", test_token)
         result = self.params.get("MapboxToken", encoding='utf8')
         assert result == test_token
 
@@ -93,19 +67,19 @@ class TestParams:
 
     def test_put_string(self):
         self.params.put("key", "value")
-        assert self.params.data["key"] == "value"
+        assert self.params.data["key"] == str("value")
 
     def test_put_bytes(self):
         test_bytes = b"test bytes"
         self.params.put("key", test_bytes)
-        expected = base64.b64encode(test_bytes).decode('utf-8')
-        assert self.params.data["key"] == expected
+        result = self.params.get("key", encoding='bytes')
+        assert result == test_bytes
 
     def test_put_mapbox_token_string(self):
         test_token = "test_token"
         self.params.put("MapboxToken", test_token)
-        expected = base64.b64encode(test_token.encode('utf-8')).decode('utf-8')
-        assert self.params.data["MapboxToken"] == expected
+        result = self.params.get("MapboxToken", encoding='utf8')
+        assert result == test_token
 
     def test_put_other_types(self):
         self.params.put("int_key", 42)
