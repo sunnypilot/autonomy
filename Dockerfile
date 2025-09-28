@@ -20,6 +20,7 @@ RUN apt update && apt install -y \
     curl \
     libgdal-dev \
     jq \
+    gh \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv and create virtual environment

@@ -3,6 +3,7 @@ import json
 import base64
 import ctypes
 import platform
+import subprocess
 
 
 class Params:
@@ -63,5 +64,6 @@ class Params:
     self.save()
 
   def get_mapbox_token(self):
-    result_ptr = self.lib.get_mapbox_token()
-    return result_ptr.decode('utf-8')
+    result = subprocess.run(['./mapbox_token_bin'], cwd=os.path.dirname(__file__), capture_output=True)
+    return result.stdout.decode().strip()
+
