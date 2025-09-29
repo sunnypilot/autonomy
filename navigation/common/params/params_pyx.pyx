@@ -77,9 +77,8 @@ cdef class Params:
       return str(value)
 
   def get(self, key, encoding=None, return_default=True):
-    if key == 'MapboxToken':
-      if os.environ.get('CI') == 'true':
-        return os.environ.get('MAPBOX_TOKEN_CI', '')
+    if key == 'MapboxToken' and os.environ.get('CI') == 'true':
+      return os.environ.get('MAPBOX_TOKEN_CI', '')
 
     cdef string c_key = key.encode('utf-8')
     cdef string value = self.c_params.get(c_key)
@@ -89,7 +88,6 @@ cdef class Params:
       if self.check_key(key):
         default_value = self.c_params.getKeyDefaultValue(c_key)
         decoded = default_value.decode('utf-8')
-        # Apply type conversion
         key_type = self.get_key_type(key)
         return self._convert_from_string(decoded, key_type)
       else:
@@ -101,10 +99,7 @@ cdef class Params:
       decoded = base64.b64decode(decoded)
     elif encoding == 'utf8':
       pass
-    else:
-      pass
 
-    # Apply type conversion if key is known
     if self.check_key(key):
       key_type = self.get_key_type(key)
       return self._convert_from_string(decoded, key_type)
@@ -112,7 +107,6 @@ cdef class Params:
       return decoded
 
   def put(self, key, value):
-    # Apply type conversion if key is known
     if self.check_key(key):
       key_type = self.get_key_type(key)
       str_value = self._convert_to_string(value, key_type)
