@@ -9,5 +9,4 @@ const char* get_default_param(const char* key) {
   }
   return nullptr;
 }
-
 }
