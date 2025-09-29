@@ -51,7 +51,7 @@ public:
   FileLock(const std::string &fn) {
     fd_ = open(fn.c_str(), O_CREAT | O_RDWR, 0775);
     if (fd_ < 0 || flock(fd_, LOCK_EX) < 0) {
-      // Error handling simplified
+      // Error handling
     }
   }
   ~FileLock() { if (fd_ >= 0) close(fd_); }
