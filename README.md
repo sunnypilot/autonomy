@@ -29,7 +29,7 @@ After running the script, activate the virtual environment in your shell:
 The params module uses a compiled C++ library for default values. Build it with:
 `scons`
 
-This generates platform-specific libraries that built on-demand.
+This generates platform-specific libraries needed to run params.
 
 ## Repository Structure
 
