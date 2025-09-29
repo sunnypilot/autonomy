@@ -9,8 +9,6 @@ dump_results() {
     echo "Mutation testing results:"
     if ! mutmut results; then
         echo "WARNING: mutmut results crashed (likely unknown exit code such as -6)."
-        # Fallback: show raw stats if available
-        [ -f mutants/mutmut-stats.json ] && cat mutants/mutmut-stats.json
     fi
 }
 
