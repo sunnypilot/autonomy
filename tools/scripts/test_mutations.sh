@@ -64,13 +64,7 @@ EOF
 else
     echo "Starting full mutation testing with mutmut"
     check_if_tests_exist
-    cat > pyproject.mutmut.toml <<EOF
-[tool.mutmut]
-paths_to_mutate = "**/*.py"
-paths_to_exclude = "navigation/common/params/params.py"
-EOF
-
-    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 3600 mutmut run --max-children 4 || \
+    timeout 3600 mutmut run --max-children 4 || \
         echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing."
 fi
 
