@@ -1,1 +1,1 @@
-SConscript('navigation/common/params/SConstruct')
+SConscript('navigation/common/params/SConscript')
