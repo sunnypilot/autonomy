@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sys/stat.h>
+#include <stdexcept>
 
 extern "C" {
 const char* get_default_param(const char* key) {
