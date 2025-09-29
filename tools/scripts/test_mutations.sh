@@ -7,20 +7,14 @@ fi
 
 dump_results() {
     echo "Mutation testing results:"
-    if ! mutmut results; then
-        echo "WARNING: mutmut results crashed"
-    fi
+    mutmut results
 }
 
 show_survivors() {
-    if mutmut results >/dev/null 2>&1; then
-        mutmut results | grep "survived" | awk '{print $1}' | while read -r s; do
-            echo ">>> $s"
-            echo
-        done
-    else
-        echo "Skipping survivor listing (mutmut results crashed)."
-    fi
+    mutmut results | grep "survived" | awk '{print $1}' | while read -r s; do
+        echo ">>> $s"
+        echo
+    done
 }
 
 cleanup() {
@@ -35,11 +29,12 @@ check_if_tests_exist() {
     fi
 }
 
-trap 'dump_results; show_survivors; cleanup' INT TERM EXIT
+trap 'dump_results; show_survivors; cleanup; exit 2' INT TERM
+trap 'dump_results; show_survivors; cleanup' EXIT
 
-if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
+if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
     base_branch="origin/${GITHUB_BASE_REF:-master}"
-    changed_files=$(git diff --name-only "$base_branch"..HEAD --diff-filter=AMR -M | grep -E '\.py$' | grep -v 'navigation/common/params/params.py' || true)
+    changed_files=$(git diff --name-only "$base_branch"..HEAD --diff-filter=AMR -M | grep -E '\.py$' || true)
 
     if [ -z "$changed_files" ]; then
         echo "No Python files changed. Skipping mutation testing."
@@ -48,22 +43,20 @@ if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
 
     paths=$(echo "$changed_files" | paste -sd "," -)
 
+    # Write temporary config
     cat > pyproject.mutmut.toml <<EOF
 [tool.mutmut]
-paths_to_exclude = "navigation/common/params/params.py"
 paths_to_mutate = "$paths"
 EOF
 
     echo "Starting mutation testing on changed files:"
     echo "$changed_files"
     check_if_tests_exist
-    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 4 || \
-        echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing..."
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 4
 else
     echo "Starting full mutation testing with mutmut"
     check_if_tests_exist
-    timeout 3600 mutmut run --max-children 4 || \
-        echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing."
+    timeout 3600 mutmut run --max-children 4
 fi
 
 echo "Mutation testing done"
@@ -71,7 +64,7 @@ echo "Mutation testing done"
 dump_results
 show_survivors
 
-if mutmut results 2>/dev/null | grep -q "bad"; then
+if mutmut results | grep -q "bad"; then
     echo "FAILED: Survived mutations found"
     exit 1
 else
