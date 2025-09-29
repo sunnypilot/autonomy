@@ -24,12 +24,8 @@ To set up the development environment, run the appropriate setup script for your
 After running the script, activate the virtual environment in your shell:
 `source .venv/bin/activate`
 
-## Building the Params Library
-
 The params module uses a compiled C++ library for default values. Build it with:
 `scons`
-
-This generates platform-specific libraries needed to run params.
 
 ## Repository Structure
 
