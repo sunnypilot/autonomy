@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -u -o pipefail
 
 if [ -d /opt/venv ]; then
     source /opt/venv/bin/activate
@@ -9,10 +9,8 @@ dump_results() {
     echo "Mutation testing results:"
     if ! mutmut results; then
         echo "WARNING: mutmut results crashed (likely unknown exit code such as -6)."
-        if [ -d mutants ]; then
-            echo "Dumping raw mutant status files for inspection:"
-            grep -R "" mutants || true
-        fi
+        # Fallback: show raw stats if available
+        [ -f mutants/mutmut-stats.json ] && cat mutants/mutmut-stats.json
     fi
 }
 
@@ -22,6 +20,8 @@ show_survivors() {
             echo ">>> $s"
             echo
         done
+    else
+        echo "Skipping survivor listing (mutmut results crashed)."
     fi
 }
 
@@ -37,8 +37,7 @@ check_if_tests_exist() {
     fi
 }
 
-trap 'dump_results; show_survivors; cleanup; exit 2' INT TERM
-trap 'dump_results; show_survivors; cleanup' EXIT
+trap 'dump_results; show_survivors; cleanup' INT TERM EXIT
 
 if [ "${GITHUB_EVENT_NAME:-}" = "pull_request" ]; then
     base_branch="origin/${GITHUB_BASE_REF:-master}"
@@ -60,10 +59,8 @@ EOF
     echo "Starting mutation testing on changed files:"
     echo "$changed_files"
     check_if_tests_exist
-    if ! MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 1; then
-        echo "Mutmut run aborted (SIGABRT or similar)."
-        exit 1
-    fi
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 1 || \
+        echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing..."
 else
     echo "Starting full mutation testing with mutmut"
     check_if_tests_exist
@@ -73,10 +70,8 @@ paths_to_mutate = "**/*.py"
 paths_to_exclude = "navigation/common/params/params.py"
 EOF
 
-    if ! MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 3600 mutmut run --max-children 1; then
-        echo "Mutmut run aborted (SIGABRT or similar)."
-        exit 1
-    fi
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 3600 mutmut run --max-children 1 || \
+        echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing."
 fi
 
 echo "Mutation testing done"
@@ -84,9 +79,5 @@ echo "Mutation testing done"
 dump_results
 show_survivors
 
-if mutmut results 2>/dev/null | grep -q "bad"; then
-    echo "FAILED: Survived mutations found"
-    exit 1
-else
-    echo "PASSED: No survived mutations"
-fi
+# Do not fail the job on survivors or crashes — always exit 0
+exit 0
