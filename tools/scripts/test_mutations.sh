@@ -59,7 +59,7 @@ EOF
     echo "Starting mutation testing on changed files:"
     echo "$changed_files"
     check_if_tests_exist
-    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 1 || \
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 4 || \
         echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing..."
 else
     echo "Starting full mutation testing with mutmut"
@@ -70,7 +70,7 @@ paths_to_mutate = "**/*.py"
 paths_to_exclude = "navigation/common/params/params.py"
 EOF
 
-    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 3600 mutmut run --max-children 1 || \
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 3600 mutmut run --max-children 4 || \
         echo "Mutmut run had non‑zero exit (SIGABRT or similar), continuing."
 fi
 
@@ -79,5 +79,9 @@ echo "Mutation testing done"
 dump_results
 show_survivors
 
-# Do not fail the job on survivors or crashes
-exit 0
+if mutmut results 2>/dev/null | grep -q "bad"; then
+    echo "FAILED: Survived mutations found"
+    exit 1
+else
+    echo "PASSED: No survived mutations"
+fi
