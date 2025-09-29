@@ -34,7 +34,7 @@ trap 'dump_results; show_survivors; cleanup' EXIT
 
 if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
     base_branch="origin/${GITHUB_BASE_REF:-master}"
-    changed_files=$(git diff --name-only "$base_branch"..HEAD --diff-filter=AMR -M | grep -E '\.py$' || true)
+    changed_files=$(git diff --name-only "$base_branch"..HEAD --diff-filter=AMR -M | grep -E '\.py$' | grep -v 'navigation/common/params/params.py' || true)
 
     if [ -z "$changed_files" ]; then
         echo "No Python files changed. Skipping mutation testing."

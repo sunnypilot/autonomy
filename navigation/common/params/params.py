@@ -2,12 +2,13 @@ import os
 import base64
 import ctypes
 import sys
+from pathlib import Path
 
 
 class Params:
   def __init__(self):
-    self.params_dir = os.path.expanduser('~/.sunnypilot/params')
-    os.makedirs(self.params_dir, exist_ok=True)
+    self.params_dir = Path(os.path.expanduser('~/.sunnypilot/params'))
+    self.params_dir.mkdir(parents=True, exist_ok=True)
     
     # Load the compiled library
     lib_ext = '.dylib' if sys.platform == 'darwin' else '.so'
@@ -16,31 +17,43 @@ class Params:
     self.lib.get_default_param.argtypes = [ctypes.c_char_p]
     self.lib.get_default_param.restype = ctypes.c_char_p
 
-  def get(self, key, encoding=None):
-    file_path = os.path.join(self.params_dir, key)
-    if os.path.exists(file_path):
-      try:
-        with open(file_path, 'r') as f:
-          value = f.read().strip()
-          if encoding == 'bytes':
-            return base64.b64decode(value)
-          elif encoding == 'utf8':
-            return value
-          else:
-            return value
-      except Exception:
-        pass
-    # Get default from compiled library
+  def __decode_value(self, value, encoding):
+    if encoding == 'bytes':
+      return base64.b64decode(value)
+    elif encoding == 'utf8':
+      return value
+    else:
+      return value
+
+  def _get_default(self, key, encoding):
     default_value = self.lib.get_default_param(key.encode('utf-8'))
     if default_value:
       value = default_value.decode('utf-8')
-      if encoding == 'bytes':
-        return base64.b64decode(value)
-      elif encoding == 'utf8':
-        return value
-      else:
-        return value
-    return None
+      decoded = self.__decode_value(value, encoding)
+    else:
+      decoded = None
+    if key == 'MapboxToken' and decoded is None:
+      return ''
+    return decoded
+
+  def get(self, key, encoding=None, return_default=True):
+    if key == 'MapboxToken':
+      if os.environ.get('CI') == 'true':
+        return os.environ.get('MAPBOX_TOKEN_CI', '')
+
+    if return_default:
+      file_path = self.params_dir / key
+      if file_path.exists():
+        try:
+          value = file_path.read_text().strip()
+          decoded = self.__decode_value(value, encoding)
+          if key == 'MapboxToken' and decoded is None:
+            return ''
+          return decoded
+        except (OSError, ValueError):
+          pass
+
+    return self._get_default(key, encoding)
 
   def get_int(self, key):
     value = self.get(key)
@@ -52,17 +65,9 @@ class Params:
       return 0
 
   def put(self, key, value):
-    file_path = os.path.join(self.params_dir, key)
-    try:
-      with open(file_path, 'w') as f:
-        if isinstance(value, bytes):
-          f.write(base64.b64encode(value).decode('utf-8'))
-        else:
-          f.write(str(value))
-    except Exception:
-      pass
-
-  def get_mapbox_token(self):
-    if os.environ.get('CI') == 'true':
-      return os.environ.get('MAPBOX_TOKEN_CI', '')
-    return self.get('MapboxToken') or ''
+    file_path = self.params_dir / key
+    with file_path.open('w') as f:
+      if isinstance(value, bytes):
+        f.write(base64.b64encode(value).decode('utf-8'))
+      else:
+        f.write(str(value))
