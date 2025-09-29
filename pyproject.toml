@@ -33,6 +33,7 @@ testing = [
     "ruff",
     "mutmut",
     "jq",
+    "scons",
 ]
 dev = [
     "einops>=0.8.0",
