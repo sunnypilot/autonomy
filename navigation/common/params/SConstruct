@@ -1,0 +1,6 @@
+env = Environment()
+
+if env['PLATFORM'] == 'darwin':
+    env.Command('libparams.dylib', 'params.cpp', 'clang++ -shared -o $TARGET $SOURCE')
+else:
+    env.Command('libparams.so', 'params.cpp', 'g++ -shared -fPIC -o $TARGET $SOURCE')

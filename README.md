@@ -24,6 +24,13 @@ To set up the development environment, run the appropriate setup script for your
 After running the script, activate the virtual environment in your shell:
 `source .venv/bin/activate`
 
+## Building the Params Library
+
+The params module uses a compiled C++ library for default values. Build it with:
+`scons`
+
+This generates platform-specific libraries that built on-demand.
+
 ## Repository Structure
 
 - `navigation`: module containing mapbox navigation features created to be transitioned to sunnypilot as a semi-offline navigation naemon. This module will map turn desires, keep left/right, and eventually auto lane changes to navigation instructions to provide a more comfortable user experience.

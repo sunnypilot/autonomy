@@ -14,6 +14,8 @@ jobs:
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    env:
+      MAPBOX_TOKEN_CI: ${{ secrets.MAPBOX_TOKEN_CI }}
 
     steps:
     - uses: actions/checkout@v4
@@ -25,6 +27,9 @@ jobs:
       run: |
         git config --global --add safe.directory $PWD
         ./tools/scripts/lint.sh
+
+    - name: Build params library
+      run: scons
 
     - name: Run tests
       run: |
