@@ -59,6 +59,7 @@ else
     check_if_tests_exist
     cat > pyproject.mutmut.toml <<EOF
 [tool.mutmut]
+paths_to_mutate = "**/*.py"
 paths_to_exclude = "navigation/common/params/params.py"
 EOF
 
