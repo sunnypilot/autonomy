@@ -79,5 +79,5 @@ echo "Mutation testing done"
 dump_results
 show_survivors
 
-# Do not fail the job on survivors or crashes — always exit 0
+# Do not fail the job on survivors or crashes
 exit 0
