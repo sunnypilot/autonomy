@@ -1,5 +1,6 @@
 # distutils: language = c++
 import os
+import base64
 import json
 from libcpp.string cimport string
 from libcpp cimport bool as cpp_bool
@@ -83,7 +84,6 @@ cdef class Params:
       str_value = self._convert_to_string(value, key_type)
     else:
       if isinstance(value, bytes):
-        import base64
         str_value = base64.b64encode(value).decode('utf-8')
       else:
         str_value = str(value)
@@ -108,7 +108,6 @@ cdef class Params:
 
     decoded = value.decode('utf-8')
     if encoding == 'bytes':
-      import base64
       decoded = base64.b64decode(decoded)
     elif encoding == 'utf8':
       pass
