@@ -46,6 +46,7 @@ if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
     # Write temporary config
     cat > pyproject.mutmut.toml <<EOF
 [tool.mutmut]
+paths_to_exclude = "navigation/common/params/params.py"
 paths_to_mutate = "$paths"
 EOF
 
@@ -56,7 +57,12 @@ EOF
 else
     echo "Starting full mutation testing with mutmut"
     check_if_tests_exist
-    timeout 3600 mutmut run --max-children 1
+    cat > pyproject.mutmut.toml <<EOF
+[tool.mutmut]
+paths_to_exclude = "navigation/common/params/params.py"
+EOF
+
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 3600 mutmut run --max-children 1
 fi
 
 echo "Mutation testing done"

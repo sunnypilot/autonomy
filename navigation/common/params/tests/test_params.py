@@ -29,7 +29,7 @@ class TestParams:
         assert result == test_bytes
 
     def test_get_mapbox_token(self):
-        result = self.params.get('MapboxToken')
+        result = self.params.get('MapboxToken', encoding='utf8')
         assert isinstance(result, str) and len(result) == 90
 
     def test_get_other_key_utf8(self):
