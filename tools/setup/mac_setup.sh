@@ -31,6 +31,12 @@ else
     brew up
 fi
 
+# provides clang++ if not already installed.. usually installed during updates though
+if ! xcode-select -p &>/dev/null; then
+  echo "Installing Xcode command line tools"
+  xcode-select --install
+fi
+
 brew install python@3.12 # install python if not already installed
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"

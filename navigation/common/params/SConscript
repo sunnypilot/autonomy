@@ -1,6 +1,21 @@
+import sys
+import sysconfig
+
 env = Environment()
 
+# Get Python path and compile cython
+python_include = sysconfig.get_path('include')
+python_lib = sysconfig.get_path('stdlib').replace('/python3.12', '')  # Remove python version from lib path
+python_executable = sys.executable
+
+cython_cmd = f'{python_executable} -m cython --cplus -o $TARGET $SOURCE'
+cython = env.Command('params_pyx.cpp', 'params_pyx.pyx', cython_cmd)
+
 if env['PLATFORM'] == 'darwin':
+    compile_cmd = f'clang++ -shared -fPIC -I{python_include} -L{python_lib} -lpython3.12 -o $TARGET $SOURCES'
+    env.Command('params_pyx.so', ['params_pyx.cpp', 'params.cpp'], compile_cmd)
     env.Command('libparams.dylib', 'params.cpp', 'clang++ -shared -o $TARGET $SOURCE')
 else:
+    compile_cmd = f'g++ -shared -fPIC -I{python_include} -L{python_lib} -lpython3.12 -o $TARGET $SOURCES'
+    env.Command('params_pyx.so', ['params_pyx.cpp', 'params.cpp'], compile_cmd)
     env.Command('libparams.so', 'params.cpp', 'g++ -shared -fPIC -o $TARGET $SOURCE')

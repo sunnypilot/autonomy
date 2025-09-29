@@ -14,7 +14,8 @@ dependencies = [
     "requests",
     "types-requests",
     "contextily",
-    "cartopy"
+    "cartopy",
+    "cython",
 ]
 
 [project.optional-dependencies]
