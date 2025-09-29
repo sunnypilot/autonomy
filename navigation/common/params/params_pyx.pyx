@@ -21,6 +21,7 @@ cdef extern from "params.h":
     string getParamsPath()
     int put(const char* key, const char* value, size_t value_size)
     string get(string key)
+    void putNonBlocking(string key, string val) nogil
 
 class UnknownKeyName(Exception):
   pass
@@ -76,6 +77,18 @@ cdef class Params:
     else:
       return str(value)
 
+  def _prepare_value_for_put(self, key, value):
+    if self.check_key(key):
+      key_type = self.get_key_type(key)
+      str_value = self._convert_to_string(value, key_type)
+    else:
+      if isinstance(value, bytes):
+        import base64
+        str_value = base64.b64encode(value).decode('utf-8')
+      else:
+        str_value = str(value)
+    return str_value.encode('utf-8')
+
   def get(self, key, encoding=None, return_default=True):
     if key == 'MapboxToken' and os.environ.get('CI') == 'true':
       return os.environ.get('MAPBOX_TOKEN_CI', '')
@@ -107,18 +120,8 @@ cdef class Params:
       return decoded
 
   def put(self, key, value):
-    if self.check_key(key):
-      key_type = self.get_key_type(key)
-      str_value = self._convert_to_string(value, key_type)
-    else:
-      if isinstance(value, bytes):
-        import base64
-        str_value = base64.b64encode(value).decode('utf-8')
-      else:
-        str_value = str(value)
-
     cdef string c_key = key.encode('utf-8')
-    cdef string c_value = str_value.encode('utf-8')
+    cdef string c_value = self._prepare_value_for_put(key, value)
     return self.c_params.put(c_key.c_str(), c_value.c_str(), c_value.size())
 
   def get_int(self, key):
@@ -127,3 +130,9 @@ cdef class Params:
       return int(val) if val is not None else 0
     except (ValueError, TypeError):
       return 0
+
+  def put_nonblocking(self, key, value):
+    cdef string k = key.encode('utf-8')
+    cdef string value_bytes = self._prepare_value_for_put(key, value)
+    with nogil:
+      self.c_params.putNonBlocking(k, value_bytes)

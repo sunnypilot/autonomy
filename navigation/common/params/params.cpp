@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <sys/stat.h>
 #include <stdexcept>
+#include <chrono>
+#include <cassert>
 
 extern "C" {
 const char* get_default_param(const char* key) {
@@ -66,6 +68,11 @@ Params::Params(const std::string &path) {
 }
 
 Params::~Params() {
+  // wait for async writes to finish before destruction
+  if (future_.valid()) {
+    future_.wait();
+  }
+  assert(queue_.empty());
 }
 
 bool Params::checkKey(const std::string &key) {
@@ -81,14 +88,18 @@ std::string Params::getKeyDefaultValue(const std::string &key) {
 }
 
 int Params::put(const char* key, const char* value, size_t value_size) {
+  return writeParam(std::string(key), std::string(value, value_size));
+}
+
+int Params::writeParam(const std::string &key, const std::string &value) {
   std::string tmp_path = params_path + "/.tmp_value_XXXXXX";
   int tmp_fd = mkstemp((char*)tmp_path.c_str());
   if (tmp_fd < 0) return -1;
 
   int result = -1;
   do {
-    ssize_t bytes_written = write(tmp_fd, value, value_size);
-    if (bytes_written < 0 || (size_t)bytes_written != value_size) {
+    ssize_t bytes_written = write(tmp_fd, value.c_str(), value.size());
+    if (bytes_written < 0 || (size_t)bytes_written != value.size()) {
       result = -20;
       break;
     }
@@ -109,11 +120,27 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   return result;
 }
 
+void Params::putNonBlocking(const std::string &key, const std::string &val) {
+  queue_.push(std::make_pair(key, val));
+  // start thread on demand
+  if (!future_.valid() || future_.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+    future_ = std::async(std::launch::async, &Params::asyncWriteThread, this);
+  }
+}
+
+void Params::asyncWriteThread() {
+  while (!queue_.empty()) {
+    auto item = queue_.front();
+    queue_.pop();
+    writeParam(item.first, item.second);
+  }
+}
+
 std::string Params::get(const std::string &key) {
-  FILE *f = fopen(getParamPath(key).c_str(), "r");
-  if (!f) return "";
+  FILE *file = fopen(getParamPath(key).c_str(), "r");
+  if (!file) return "";
   char buf[4096];
-  size_t n = fread(buf, 1, sizeof(buf), f);
-  fclose(f);
+  size_t n = fread(buf, 1, sizeof(buf), file);
+  fclose(file);
   return std::string(buf, n);
 }

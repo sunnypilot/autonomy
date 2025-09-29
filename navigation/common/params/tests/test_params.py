@@ -1,6 +1,7 @@
 import os
 import shutil
 import tempfile
+import time
 
 from navigation.common.params.params import Params
 
@@ -19,7 +20,7 @@ class TestParams:
     if self.temp_dir:
       shutil.rmtree(self.temp_dir)
     else:
-      test_keys = ["key", "other_key", "int_key", "list_key"]
+      test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key"]
       for key in test_keys:
         file_path = os.path.join(self.params.params_dir, key)
         if os.path.exists(file_path):
@@ -34,8 +35,8 @@ class TestParams:
 
   def test_get_with_bytes_encoding(self):
     test_bytes = b"test bytes"
-    self.params.put("key", test_bytes)
-    result = self.params.get("key", encoding='bytes')
+    self.params.put("bytes_key", test_bytes)
+    result = self.params.get("bytes_key")
     assert result == test_bytes
 
   def test_get_mapbox_token(self):
@@ -64,12 +65,34 @@ class TestParams:
 
   def test_put_bytes(self):
     test_bytes = b"test bytes"
-    self.params.put("key", test_bytes)
-    result = self.params.get("key", encoding='bytes')
+    self.params.put("bytes_key", test_bytes)
+    result = self.params.get("bytes_key")
     assert result == test_bytes
 
   def test_put_other_types(self):
     self.params.put("int_key", 42)
-    assert self.params.get("int_key") == "42"
+    assert self.params.get("int_key") == 42
     self.params.put("list_key", [1, 2, 3])
-    assert self.params.get("list_key") == "[1, 2, 3]"
+    assert self.params.get("list_key") == [1, 2, 3]
+
+  def test_nonblocking_put(self):
+    self.params.put_nonblocking("bytes_key", b"value")
+    time.sleep(0.001)  # Give time for async write to complete
+    assert self.params.get("bytes_key") == b"value"
+    self.params.put_nonblocking("key", ['new', 'value'])
+    time.sleep(0.001)
+    assert self.params.get("key") == "['new', 'value']"
+   
+  def test_json_serialization(self):
+    data = {"a": 1, "b": [1, 2, 3], "c": {"nested": "dict"}}
+    self.params.put("json_key", data)
+    result = self.params.get("json_key")
+    assert result == data
+
+  def test_put_bool(self):
+    self.params.put("bool_key", True)
+    assert self.params.get("bool_key")
+
+  def test_put_float(self):
+    self.params.put("float_key", 3.14)
+    assert self.params.get("float_key") == 3.14
