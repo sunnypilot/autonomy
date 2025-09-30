@@ -12,7 +12,7 @@ class MapboxIntegration:
     self.params_capnp = capnp.load('navigation/common/navigation.capnp')
 
   def get_public_token(self):
-    token = self.params.get_mapbox_token()
+    token = self.params.get('MapboxToken', encoding='utf8')
     return token
 
   def get_last_longitude_latitude(self):

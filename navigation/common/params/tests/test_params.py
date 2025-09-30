@@ -20,7 +20,7 @@ class TestParams:
     if self.temp_dir:
       shutil.rmtree(self.temp_dir)
     else:
-      test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key"]
+      test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key", "large_key"]
       for key in test_keys:
         file_path = os.path.join(self.params.params_dir, key)
         if os.path.exists(file_path):

@@ -16,7 +16,7 @@ class TestMapbox:
     settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
     settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
     settings.searchInput = 0
-    self.mapbox.params.put("MapboxSettings", settings.to_bytes())
+    self.mapbox.params.put_nonblocking("MapboxSettings", settings.to_bytes())
 
     # Update GPS position
     current_lon, current_lat = -119.17557, 34.23305
