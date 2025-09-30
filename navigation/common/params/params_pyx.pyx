@@ -1,4 +1,5 @@
 # distutils: language = c++
+# cython: language_level = 3
 import os
 import base64
 import json
