@@ -1,15 +1,15 @@
 import json
-import capnp
 from urllib.parse import quote
 import requests
 from navigation.common.params.params import Params
 from navigation.navd.helpers import Coordinate, string_to_direction
+from navigation.common.capnp import navigation
 
 
 class MapboxIntegration:
   def __init__(self):
     self.params = Params()
-    self.params_capnp = capnp.load('navigation/common/navigation.capnp')
+    self.params_capnp = navigation
 
   def get_public_token(self):
     token = self.params.get('MapboxToken', encoding='utf8')

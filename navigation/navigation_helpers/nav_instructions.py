@@ -1,16 +1,14 @@
-import capnp
-import os
-
 from navigation.common.params.params import Params
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navd.helpers import Coordinate, string_to_direction
+from navigation.common.capnp import navigation
 
 
 class NavigationInstructions:
   def __init__(self):
     self.mapbox = MapboxIntegration()
     self.params = Params()
-    self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', 'common', 'navigation.capnp'))
+    self.params_capnp = navigation
     self.coord = Coordinate(0, 0)
 
   def get_upcoming_turn(self, current_lat, current_lon) -> str:
