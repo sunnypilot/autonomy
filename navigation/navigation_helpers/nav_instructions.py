@@ -51,13 +51,7 @@ class NavigationInstructions:
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
     current_step_index = -1
     for i, step in enumerate(route['steps']):
-      def distance_to_geom(j):
-        temp_coord.latitude = route['geometry'][j][1]
-        temp_coord.longitude = route['geometry'][j][0]
-        return step['location'].distance_to(temp_coord)
-      step_closest_index = min(range(len(route['geometry'])), key=distance_to_geom)
-      step_cumulative = route['cumulative_distances'][step_closest_index]
-      if step_cumulative <= closest_cumulative:
+      if step['cumulative_distance'] <= closest_cumulative:
         current_step_index = i
       else:
         break
@@ -72,12 +66,7 @@ class NavigationInstructions:
     next_turn = route['steps'][next_turn_index] if next_turn_index < len(route['steps']) else None
     next_turn_distance = None
     if next_turn:
-      def distance_to_geom_next(j):
-        temp_coord.latitude = route['geometry'][j][1]
-        temp_coord.longitude = route['geometry'][j][0]
-        return next_turn['location'].distance_to(temp_coord)
-      next_step_closest_index = min(range(len(route['geometry'])), key=distance_to_geom_next)
-      next_turn_distance = max(0, route['cumulative_distances'][next_step_closest_index] - closest_cumulative)
+      next_turn_distance = max(0, next_turn['cumulative_distance'] - closest_cumulative)
 
     return {
       'distance_from_route': min_distance,
@@ -96,15 +85,6 @@ class NavigationInstructions:
     with self.params_capnp.MapboxSettings.from_bytes(param_value) as settings:
       route = settings.navData.route
       steps = []
-      for step in route.steps:
-        steps.append({
-          'instruction': step.instruction,
-          'distance': step.distance,
-          'duration': step.duration,
-          'maneuver': step.maneuver,
-          'location': Coordinate(step.location.latitude, step.location.longitude),
-          'turn_direction': string_to_direction(step.instruction)
-        })
       geometry = [(coord.longitude, coord.latitude) for coord in route.geometry]
       cumulative_distances = [0.0]
       for j in range(1, len(geometry)):
@@ -113,6 +93,19 @@ class NavigationInstructions:
         dist = coord1.distance_to(coord2)
         cumulative_distances.append(cumulative_distances[-1] + dist)
       maxspeed = [(ms.speed, ms.unit) for ms in route.maxspeed]
+      for step in route.steps:
+        location = Coordinate(step.location.latitude, step.location.longitude)
+        closest_index = min(range(len(geometry)), key=lambda j: location.distance_to(Coordinate(geometry[j][1], geometry[j][0])))
+        cumulative_distance = cumulative_distances[closest_index]
+        steps.append({
+          'instruction': step.instruction,
+          'distance': step.distance,
+          'duration': step.duration,
+          'maneuver': step.maneuver,
+          'location': location,
+          'turn_direction': string_to_direction(step.instruction),
+          'cumulative_distance': cumulative_distance
+        })
       return {
         'steps': steps,
         'total_distance': route.totalDistance,
