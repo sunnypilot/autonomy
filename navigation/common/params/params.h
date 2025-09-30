@@ -27,7 +27,7 @@ const std::unordered_map<std::string, KeyInfo> KEYS = {
   {"MapboxSettings", {ParamKeyType::BYTES}},
 
 
-  // CI/test keys
+  // CI test keys
   {"key", {ParamKeyType::STRING, ""}},
   {"bool_key", {ParamKeyType::BOOL, "0"}},
   {"int_key", {ParamKeyType::INT, "42"}},

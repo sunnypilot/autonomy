@@ -2,7 +2,6 @@ import os
 import shutil
 import tempfile
 import time
-import threading
 
 from navigation.common.params.params import Params
 
