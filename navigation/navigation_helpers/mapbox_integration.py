@@ -19,7 +19,6 @@ class MapboxIntegration:
         settings.navData = existing.navData
     else:
       settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
-      settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
       settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
     return settings
   
@@ -27,21 +26,25 @@ class MapboxIntegration:
     token = self.params.get("MapboxToken", encoding='utf8')
     return token
 
-  def _update_destination_cache(self, settings, new_dest):
-    destinations = [new_dest]
-    for entry in settings.navData.cache.entries:
-      if len(destinations) >= 10:
-        break
-      destinations.append({
-        'latitude': entry.latitude,
-        'longitude': entry.longitude,
-        'place_name': entry.placeName
-      })
-    entries = settings.navData.cache.init('entries', len(destinations))
-    for i, d in enumerate(destinations):
-      entries[i].latitude = d['latitude']
-      entries[i].longitude = d['longitude']
-      entries[i].placeName = d['place_name']
+  def _populate_route(self, settings, route_data):
+    settings.navData.route.totalDistance = route_data['total_distance']
+    settings.navData.route.totalDuration = route_data['total_duration']
+    route_steps = settings.navData.route.init('steps', len(route_data['steps']))
+    for i, step in enumerate(route_data['steps']):
+      route_steps[i].instruction = step['instruction']
+      route_steps[i].distance = step['distance']
+      route_steps[i].duration = step['duration']
+      route_steps[i].maneuver = step['maneuver']
+      route_steps[i].location.longitude = step['location'].longitude
+      route_steps[i].location.latitude = step['location'].latitude
+    route_geometry = settings.navData.route.init('geometry', len(route_data['geometry']))
+    for i, coord in enumerate(route_data['geometry']):
+      route_geometry[i].longitude = coord[0]
+      route_geometry[i].latitude = coord[1]
+    maxspeed_entries = settings.navData.route.init('maxspeed', len(route_data['maxspeed']))
+    for i, ms in enumerate(route_data['maxspeed']):
+      maxspeed_entries[i].speed = ms['speed']
+      maxspeed_entries[i].unit = ms['unit']
 
   def search_addr(self, postvars, current_lon, current_lat, valid_addr, token):
     addr = postvars.get("addr_val")
@@ -62,8 +65,6 @@ class MapboxIntegration:
 
   def set_destination(self, postvars, valid_addr, current_lon, current_lat):
     if postvars.get("latitude") is not None and postvars.get("longitude") is not None:
-      postvars["latitude"] = postvars.get("latitude")
-      postvars["longitude"] = postvars.get("longitude")
       self.nav_confirmed(postvars, current_lon, current_lat)
       valid_addr = True
     else:
@@ -82,12 +83,10 @@ class MapboxIntegration:
     if postvars is not None:
       latitude = float(postvars.get("latitude"))
       longitude = float(postvars.get("longitude"))
-      name = postvars.get("name") if postvars.get("name") is not None else ""
+      name = postvars.get("name") or ""
       settings = self._load_mapbox_settings()
       if name == "":
         name = f"{latitude},{longitude}"
-      new_dest = {"latitude": latitude, "longitude": longitude, "place_name": name}
-      self._update_destination_cache(settings, new_dest)
       settings.navData.current.latitude = latitude
       settings.navData.current.longitude = longitude
       settings.navData.current.placeName = name
@@ -95,25 +94,7 @@ class MapboxIntegration:
       token = self.get_public_token()
       route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)
       if route_data:
-        settings.navData.route.totalDistance = route_data['total_distance']
-        settings.navData.route.totalDuration = route_data['total_duration']
-        route_steps = settings.navData.route.init('steps', len(route_data['steps']))
-        for i, step in enumerate(route_data['steps']):
-          route_steps[i].instruction = step['instruction']
-          route_steps[i].distance = step['distance']
-          route_steps[i].duration = step['duration']
-          route_steps[i].maneuver = step['maneuver']
-          route_steps[i].location.longitude = step['location'].longitude
-          route_steps[i].location.latitude = step['location'].latitude
-        route_geometry = settings.navData.route.init('geometry', len(route_data['geometry']))
-        for i, coord in enumerate(route_data['geometry']):
-          route_geometry[i].longitude = coord[0]
-          route_geometry[i].latitude = coord[1]
-        maxspeed_entries = settings.navData.route.init('maxspeed', len(route_data['maxspeed']))
-        for i, ms in enumerate(route_data['maxspeed']):
-          maxspeed_entries[i].speed = ms['speed']
-          maxspeed_entries[i].unit = ms['unit']
-
+        self._populate_route(settings, route_data)
       self.params.put("MapboxSettings", settings.to_bytes())
 
   def generate_route(self, start_lon, start_lat, end_lon, end_lat, token):
@@ -135,21 +116,17 @@ class MapboxIntegration:
       return None
     route = data['routes'][0]
     legs = route['legs'][0]
-    steps = []
-    for step in legs['steps']:
-      maneuver = step['maneuver']['type']
-      instruction = step['maneuver'].get('instruction', '')
-      distance = step['distance']
-      duration = step['duration']
-      location = step['maneuver']['location']
-      steps.append({
-        'maneuver': maneuver,
-        'instruction': instruction,
-        'distance': distance,
-        'duration': duration,
-        'location': Coordinate(location[1], location[0]),
-        'turn_direction': string_to_direction(instruction)
-      })
+    steps = [
+        {
+            'maneuver': step['maneuver']['type'],
+            'instruction': step['maneuver'].get('instruction', ''),
+            'distance': step['distance'],
+            'duration': step['duration'],
+            'location': Coordinate(step['maneuver']['location'][1], step['maneuver']['location'][0]),
+            'turn_direction': string_to_direction(step['maneuver'].get('instruction', ''))
+        }
+        for step in legs['steps']
+    ]
     maxspeed_list = legs.get('annotation', {}).get('maxspeed', [])
     maxspeed = []
     for item in maxspeed_list:

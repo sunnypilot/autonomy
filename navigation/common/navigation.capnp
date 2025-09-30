@@ -14,10 +14,6 @@ struct MapboxSettings {
     placeName @2 :Text;
   }
 
-  struct NavDestinationsList {
-    entries @0 :List(Destination);
-  }
-
   struct RouteStep {
     instruction @0 :Text;
     distance @1 :Float64;
@@ -41,7 +37,6 @@ struct MapboxSettings {
 
   struct NavData {
     current @0 :Destination;
-    cache @1 :NavDestinationsList;
-    route @2 :Route;
+    route @1 :Route;
   }
 }
