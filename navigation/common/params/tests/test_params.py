@@ -20,7 +20,7 @@ class TestParams:
     if self.temp_dir:
       shutil.rmtree(self.temp_dir)
     else:
-      test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key"]
+      test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key", "large_key"]
       for key in test_keys:
         file_path = os.path.join(self.params.params_dir, key)
         if os.path.exists(file_path):
@@ -75,10 +75,10 @@ class TestParams:
 
   def test_nonblocking_put(self):
     self.params.put_nonblocking("bytes_key", b"value")
-    time.sleep(0.001)  # Give time for async write to complete
+    time.sleep(0.02)  # Give time for async write to complete
     assert self.params.get("bytes_key") == b"value"
     self.params.put_nonblocking("key", ['new', 'value'])
-    time.sleep(0.001)
+    time.sleep(0.02)
     assert self.params.get("key") == "['new', 'value']"
    
   def test_json_serialization(self):
