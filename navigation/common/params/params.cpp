@@ -3,13 +3,14 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <csignal>
-#include <cstdio>
 #include <cstdlib>
 #include <sys/stat.h>
 #include <stdexcept>
 #include <chrono>
 #include <cassert>
+#include <fstream>
+#include <iterator>
+#include <iostream>
 
 extern "C" {
 const char* get_default_param(const char* key) {
@@ -32,9 +33,9 @@ int fsync_dir(const std::string &path) {
   return result;
 }
 
-bool create_params_path(const std::string &param_path) {
+bool create_params_path(const std::string &params_path) {
   // Make sure params path exists
-  if (mkdir(param_path.c_str(), 0775) != 0 && errno != EEXIST) {
+  if (mkdir(params_path.c_str(), 0775) != 0 && errno != EEXIST) {
     return false;
   }
   return true;
@@ -51,9 +52,9 @@ std::string ensure_params_path(const std::string &path = {}) {
 class FileLock {
 public:
   FileLock(const std::string &fn) {
-    fd_ = open(fn.c_str(), O_CREAT | O_RDWR, 0775);
+    fd_ = open(fn.c_str(), O_CREAT, 0775);
     if (fd_ < 0 || flock(fd_, LOCK_EX) < 0) {
-      // Error handling
+      std::cerr << "Failed to lock file " << fn << ", errno=" << errno << std::endl;
     }
   }
   ~FileLock() { if (fd_ >= 0) close(fd_); }
@@ -137,10 +138,7 @@ void Params::asyncWriteThread() {
 }
 
 std::string Params::get(const std::string &key) {
-  FILE *file = fopen(getParamPath(key).c_str(), "r");
+  std::ifstream file(getParamPath(key));
   if (!file) return "";
-  char buf[4096];
-  size_t n = fread(buf, 1, sizeof(buf), file);
-  fclose(file);
-  return std::string(buf, n);
+  return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 }

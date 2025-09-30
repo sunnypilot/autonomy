@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import time
+import threading
 
 from navigation.common.params.params import Params
 
@@ -96,3 +97,8 @@ class TestParams:
   def test_put_float(self):
     self.params.put("float_key", 3.14)
     assert self.params.get("float_key") == 3.14
+
+  def test_large_value(self):
+    large_value = "This string becomes so big!" * 10_000  # test a huge string
+    self.params.put("large_key", large_value)
+    assert self.params.get("large_key") == large_value
