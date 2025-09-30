@@ -16,7 +16,6 @@ class MapboxIntegration:
     settings = self.params_capnp.MapboxSettings.new_message()
     if param_value:
       with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
-        settings.lastGPSPosition = existing.lastGPSPosition
         settings.navData = existing.navData
     else:
       settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
@@ -28,63 +27,50 @@ class MapboxIntegration:
     token = self.params.get('MapboxToken', encoding='utf8')
     return token
 
-  def get_last_longitude_latitude(self):
-    param_value = self.params.get("MapboxSettings", encoding='bytes')
-    if param_value:
-      with self.params_capnp.MapboxSettings.from_bytes(param_value) as settings:
-        return settings.lastGPSPosition.longitude, settings.lastGPSPosition.latitude
-    return 0.0, 0.0  # Default if not set
-
-  def search_addr(self, postvars, longitude, latitude, valid_addr, token):
-    if "addr_val" in postvars:
-      addr = postvars.get("addr_val")
-      if addr != "":
-        addr_encoded = quote(addr)
-        query = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{addr_encoded}.json?access_token={token}&limit=1"
-        # focus on place around last gps position
-        longitude, latitude = self.get_last_longitude_latitude()
-        query += f"&proximity={longitude},{latitude}"
-        r = requests.get(query)
-        if r.status_code != 200:
-          return (addr, longitude, latitude, valid_addr, token)
+  def search_addr(self, postvars, current_lon, current_lat, valid_addr, token):
+    addr = postvars.get("addr_val")
+    longitude = current_lon
+    latitude = current_lat
+    if addr and addr != "":
+      addr_encoded = quote(addr)
+      query = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{addr_encoded}.json?access_token={token}&limit=1"
+      # focus on place around gps position
+      query += f"&proximity={current_lon},{current_lat}"
+      r = requests.get(query)
+      if r.status_code == 200:
         json_response = json.loads(r.text)
-        if not json_response["features"]:
-          return (addr, longitude, latitude, valid_addr, token)
-        longitude, latitude = json_response["features"][0]["geometry"]["coordinates"]
-        valid_addr = True
+        if json_response["features"]:
+          longitude, latitude = json_response["features"][0]["geometry"]["coordinates"]
+          valid_addr = True
     return (addr, longitude, latitude, valid_addr, token)
 
-  def set_destination(self, postvars, valid_addr):
+  def set_destination(self, postvars, valid_addr, current_lon, current_lat):
     if postvars.get("latitude") is not None and postvars.get("longitude") is not None:
       postvars["latitude"] = postvars.get("latitude")
       postvars["longitude"] = postvars.get("longitude")
-      self.nav_confirmed(postvars)
+      self.nav_confirmed(postvars, current_lon, current_lat)
       valid_addr = True
     else:
       addr = postvars.get("place_name")
       postvars["addr_val"] = addr
-      longitude = 0.0
-      latitude = 0.0
       token = self.get_public_token()
-      data, longitude, latitude, valid_addr, token = self.search_addr(postvars, longitude, latitude, valid_addr, token)
+      data, longitude, latitude, valid_addr, token = self.search_addr(postvars, current_lon, current_lat, valid_addr, token)
       postvars["latitude"] = latitude
       postvars["longitude"] = longitude
       postvars["name"] = data  # Set the name to the geocoded address
       if valid_addr:
-        self.nav_confirmed(postvars)
+        self.nav_confirmed(postvars, current_lon, current_lat)
     return postvars, valid_addr
 
-  def nav_confirmed(self, postvars):
-    print(f"nav_confirmed {postvars}")
+  def nav_confirmed(self, postvars, start_lon, start_lat):
     if postvars is not None:
       latitude = float(postvars.get("latitude"))
-      longitudinal = float(postvars.get("longitude"))
+      longitude = float(postvars.get("longitude"))
       name = postvars.get("name") if postvars.get("name") is not None else ""
       settings = self._load_mapbox_settings()
-      print(f"nav_confirmed {latitude}, {longitudinal}, {name}")
       if name == "":
-        name =  str(latitude) + "," + str(longitudinal)
-      new_dest = {"latitude": float(latitude), "longitude": float(longitudinal), "place_name": name}
+        name = f"{latitude},{longitude}"
+      new_dest = {"latitude": latitude, "longitude": longitude, "place_name": name}
       destinations = []
       for entry in settings.navData.cache.entries:
         destinations.append({
@@ -97,12 +83,11 @@ class MapboxIntegration:
         destinations.pop(0)
       destinations.insert(0, new_dest)
       settings.navData.current.latitude = latitude
-      settings.navData.current.longitude = longitudinal
+      settings.navData.current.longitude = longitude
       settings.navData.current.placeName = name
       # Generate route from current GPS to destination
-      start_lon, start_lat = settings.lastGPSPosition.longitude, settings.lastGPSPosition.latitude
       token = self.get_public_token()
-      route_data = self.generate_route(start_lon, start_lat, longitudinal, latitude, token)
+      route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)
       if route_data:
         settings.navData.route.totalDistance = route_data['total_distance']
         settings.navData.route.totalDuration = route_data['total_duration']
@@ -129,12 +114,6 @@ class MapboxIntegration:
         entries[i].longitude = d['longitude']
         entries[i].placeName = d['place_name']
       self.params.put("MapboxSettings", settings.to_bytes())
-
-  def update_gps_position(self, longitude, latitude):
-    settings = self._load_mapbox_settings()
-    settings.lastGPSPosition.longitude = longitude
-    settings.lastGPSPosition.latitude = latitude
-    self.params.put("MapboxSettings", settings.to_bytes())
 
   def generate_route(self, start_lon, start_lat, end_lon, end_lat, token):
     if not token:

@@ -16,7 +16,7 @@ class NavigationInstructions:
     self.coord.latitude = current_lat
     self.coord.longitude = current_lon
     for step in route['steps']:
-      turn_dir = step.get('turn_direction')
+      turn_dir = str(step.get('turn_direction'))
       if turn_dir and turn_dir != 'none':
         distance = self.coord.distance_to(step['location'])
         if distance <= 100:  # Within 100 meters

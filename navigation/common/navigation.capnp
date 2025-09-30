@@ -1,8 +1,7 @@
 @0x8d30477844c72468;
 struct MapboxSettings {
-  lastGPSPosition @0 :GPSPosition;
-  searchInput @1 :Int32;
-  navData @2 :NavData;
+  searchInput @0 :Int32;
+  navData @1 :NavData;
 
   struct GPSPosition {
     longitude @0 :Float64;
