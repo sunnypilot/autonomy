@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -u -o pipefail
 
 if [ -d /opt/venv ]; then
     source /opt/venv/bin/activate

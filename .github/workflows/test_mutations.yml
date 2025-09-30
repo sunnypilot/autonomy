@@ -11,6 +11,7 @@ jobs:
     container: ghcr.io/sunnypilot/autonomy:latest
     env:
       UV_PROJECT_ENVIRONMENT: /opt/venv
+      MAPBOX_TOKEN_CI: ${{ secrets.MAPBOX_TOKEN_CI }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -19,6 +20,9 @@ jobs:
     - run: git config --global --add safe.directory $PWD
     - name: Fetch base branch
       run: git fetch origin ${GITHUB_BASE_REF:-master}
+
+    - name: Build params library
+      run: scons
 
     - name: Run mutation tests
       run: ./tools/scripts/test_mutations.sh

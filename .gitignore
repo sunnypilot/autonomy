@@ -22,4 +22,9 @@ Thumbs.db
 .hypothesis/
 .ipynb_checkpoints/
 autonomy.egg-info/
-navigation/common/params/mapbox_token.cpp
+.sconsign.dblite
+
+# Compiled files
+*.dylib
+*.so
+navigation/common/params/params_pyx.cpp
