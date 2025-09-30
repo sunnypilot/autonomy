@@ -22,3 +22,9 @@ Thumbs.db
 .hypothesis/
 .ipynb_checkpoints/
 autonomy.egg-info/
+.sconsign.dblite
+
+# Compiled files
+*.dylib
+*.so
+navigation/common/params/params_pyx.cpp

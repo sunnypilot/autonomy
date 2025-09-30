@@ -12,7 +12,7 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 
 # Install packages
-sudo apt install -y git-lfs zlib1g-dev libeigen3-dev ffmpeg libglfw3-dev llvm libssl-dev libzmq3-dev gcc-arm-none-eabi portaudio19-dev gcc-13
+sudo apt install -y git-lfs zlib1g-dev libeigen3-dev ffmpeg libglfw3-dev llvm libssl-dev libzmq3-dev gcc-arm-none-eabi portaudio19-dev gcc-13 g++
 echo "[ ] finished apt install t=$SECONDS"
 
 
