@@ -1,12 +1,10 @@
 from navigation.common.params.params import Params
-from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navd.helpers import Coordinate, string_to_direction
 from navigation.common.capnp import navigation
 
 
 class NavigationInstructions:
   def __init__(self):
-    self.mapbox = MapboxIntegration()
     self.params = Params()
     self.params_capnp = navigation
     self.coord = Coordinate(0, 0)
@@ -18,7 +16,7 @@ class NavigationInstructions:
     self.coord.latitude = current_lat
     self.coord.longitude = current_lon
     for step in route['steps']:
-      turn_dir = str(step.get('turn_direction'))
+      turn_dir = step.get('turn_direction')
       if turn_dir and turn_dir != 'none':
         distance = self.coord.distance_to(step['location'])
         if distance <= 100:  # Within 100 meters
@@ -52,11 +50,11 @@ class NavigationInstructions:
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
     current_step_index = -1
-    def distance_to_geom(j):
-      temp_coord.latitude = route['geometry'][j][1]
-      temp_coord.longitude = route['geometry'][j][0]
-      return step['location'].distance_to(temp_coord)
     for i, step in enumerate(route['steps']):
+      def distance_to_geom(j):
+        temp_coord.latitude = route['geometry'][j][1]
+        temp_coord.longitude = route['geometry'][j][0]
+        return step['location'].distance_to(temp_coord)
       step_closest_index = min(range(len(route['geometry'])), key=distance_to_geom)
       step_cumulative = route['cumulative_distances'][step_closest_index]
       if step_cumulative <= closest_cumulative:
