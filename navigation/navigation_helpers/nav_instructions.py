@@ -37,10 +37,8 @@ class NavigationInstructions:
     # Find closest point on the route polyline
     min_distance = float('inf')
     closest_index = 0
-    for i in range(len(route['geometry'])):
-      lat, lon = route['geometry'][i][1], route['geometry'][i][0]
-      temp_coord.latitude = lat
-      temp_coord.longitude = lon
+    for i, (longitude, latitude) in enumerate(route['geometry']):
+      temp_coord = Coordinate(latitude, longitude)
       dist = self.coord.distance_to(temp_coord)
       if dist < min_distance:
         min_distance = dist
@@ -49,12 +47,7 @@ class NavigationInstructions:
     current_maxspeed = route['maxspeed'][closest_index] if closest_index < len(route['maxspeed']) else None
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
-    current_step_index = -1
-    for i, step in enumerate(route['steps']):
-      if step['cumulative_distance'] <= closest_cumulative:
-        current_step_index = i
-      else:
-        break
+    current_step_index = max((i for i, step in enumerate(route['steps']) if step['cumulative_distance'] <= closest_cumulative), default=-1)
 
     if current_step_index == -1:
       current_step = route['steps'][0] if route['steps'] else None
@@ -95,7 +88,7 @@ class NavigationInstructions:
       maxspeed = [(ms.speed, ms.unit) for ms in route.maxspeed]
       for step in route.steps:
         location = Coordinate(step.location.latitude, step.location.longitude)
-        closest_index = min(range(len(geometry)), key=lambda j: location.distance_to(Coordinate(geometry[j][1], geometry[j][0])))
+        closest_index = min(range(len(geometry)), key=lambda i: location.distance_to(Coordinate(geometry[i][1], geometry[i][0])))
         cumulative_distance = cumulative_distances[closest_index]
         steps.append({
           'instruction': step.instruction,
