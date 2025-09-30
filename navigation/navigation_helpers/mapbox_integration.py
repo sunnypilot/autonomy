@@ -22,10 +22,26 @@ class MapboxIntegration:
       settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
       settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
     return settings
-
+  
   def get_public_token(self):
-    token = self.params.get('MapboxToken', encoding='utf8')
+    token = self.params.get("MapboxToken", encoding='utf8')
     return token
+
+  def _update_destination_cache(self, settings, new_dest):
+    destinations = [new_dest]
+    for entry in settings.navData.cache.entries:
+      if len(destinations) >= 10:
+        break
+      destinations.append({
+        'latitude': entry.latitude,
+        'longitude': entry.longitude,
+        'place_name': entry.placeName
+      })
+    entries = settings.navData.cache.init('entries', len(destinations))
+    for i, d in enumerate(destinations):
+      entries[i].latitude = d['latitude']
+      entries[i].longitude = d['longitude']
+      entries[i].placeName = d['place_name']
 
   def search_addr(self, postvars, current_lon, current_lat, valid_addr, token):
     addr = postvars.get("addr_val")
@@ -71,17 +87,7 @@ class MapboxIntegration:
       if name == "":
         name = f"{latitude},{longitude}"
       new_dest = {"latitude": latitude, "longitude": longitude, "place_name": name}
-      destinations = []
-      for entry in settings.navData.cache.entries:
-        destinations.append({
-          'latitude': entry.latitude,
-          'longitude': entry.longitude,
-          'place_name': entry.placeName
-        })
-      # Keep only recent 10
-      if len(destinations) >= 10:
-        destinations.pop(0)
-      destinations.insert(0, new_dest)
+      self._update_destination_cache(settings, new_dest)
       settings.navData.current.latitude = latitude
       settings.navData.current.longitude = longitude
       settings.navData.current.placeName = name
@@ -108,11 +114,6 @@ class MapboxIntegration:
           maxspeed_entries[i].speed = ms['speed']
           maxspeed_entries[i].unit = ms['unit']
 
-      entries = settings.navData.cache.init('entries', len(destinations))
-      for i, d in enumerate(destinations):
-        entries[i].latitude = d['latitude']
-        entries[i].longitude = d['longitude']
-        entries[i].placeName = d['place_name']
       self.params.put("MapboxSettings", settings.to_bytes())
 
   def generate_route(self, start_lon, start_lat, end_lon, end_lat, token):
