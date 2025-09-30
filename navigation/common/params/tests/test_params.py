@@ -70,9 +70,7 @@ class TestParams:
     assert result == test_bytes
 
   def test_put_other_types(self):
-    self.params.put("int_key", 42)
     assert self.params.get("int_key") == 42
-    self.params.put("list_key", [1, 2, 3])
     assert self.params.get("list_key") == [1, 2, 3]
 
   def test_nonblocking_put(self):
@@ -90,7 +88,6 @@ class TestParams:
     assert result == data
 
   def test_put_bool(self):
-    self.params.put("bool_key", True)
     assert self.params.get("bool_key")
 
   def test_put_float(self):

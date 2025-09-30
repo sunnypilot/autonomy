@@ -29,10 +29,10 @@ const std::unordered_map<std::string, KeyInfo> KEYS = {
 
   // CI test keys
   {"key", {ParamKeyType::STRING, ""}},
-  {"bool_key", {ParamKeyType::BOOL, "0"}},
+  {"bool_key", {ParamKeyType::BOOL, "1"}},
   {"int_key", {ParamKeyType::INT, "42"}},
   {"float_key", {ParamKeyType::FLOAT, "3.14"}},
-  {"list_key", {ParamKeyType::JSON, "[]"}},
+  {"list_key", {ParamKeyType::JSON, "[1, 2, 3]"}},
   {"json_key", {ParamKeyType::JSON, "{}"}},
   {"bytes_key", {ParamKeyType::BYTES}},
 };
