@@ -1,5 +1,7 @@
 import capnp
 import os
+import shutil
+import tempfile
 
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
@@ -7,16 +9,25 @@ from navigation.navigation_helpers.nav_instructions import NavigationInstruction
 
 class TestMapbox:
   def setup_method(self):
+    self.temp_home = None
+    if os.environ.get('CI') == 'true':
+      self.temp_home = tempfile.mkdtemp()
+      os.environ['HOME'] = self.temp_home
+      os.makedirs(os.path.join(self.temp_home, '.sunnypilot', 'params'), exist_ok=True)
     self.params_capnp = capnp.load(os.path.join(os.path.dirname(__file__), '..', '..','common', 'navigation.capnp'))
     self.mapbox = MapboxIntegration()
     self.nav = NavigationInstructions()
+
+  def teardown_method(self):
+    if self.temp_home:
+      shutil.rmtree(self.temp_home)
 
   def test_mapbox_integration(self):
     settings = self.params_capnp.MapboxSettings.new_message()
     settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
     settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
     settings.searchInput = 0
-    self.mapbox.params.put_nonblocking("MapboxSettings", settings.to_bytes())
+    self.mapbox.params.put("MapboxSettings", settings.to_bytes())
 
     # Update GPS position
     current_lon, current_lat = -119.17557, 34.23305

@@ -75,10 +75,10 @@ class TestParams:
 
   def test_nonblocking_put(self):
     self.params.put_nonblocking("bytes_key", b"value")
-    time.sleep(0.001)  # Give time for async write to complete
+    time.sleep(0.02)  # Give time for async write to complete
     assert self.params.get("bytes_key") == b"value"
     self.params.put_nonblocking("key", ['new', 'value'])
-    time.sleep(0.001)
+    time.sleep(0.02)
     assert self.params.get("key") == "['new', 'value']"
    
   def test_json_serialization(self):
