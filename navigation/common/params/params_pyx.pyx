@@ -59,7 +59,7 @@ cdef class Params:
     elif key_type == ParamKeyType.JSON:
       return json.loads(value)
     elif key_type == ParamKeyType.BYTES:
-      return value.encode()
+      return base64.b64decode(value) if isinstance(value, str) else value
     else:
       return value
 
@@ -75,7 +75,7 @@ cdef class Params:
     elif key_type == ParamKeyType.JSON:
       return json.dumps(value)
     elif key_type == ParamKeyType.BYTES:
-      return value.decode() if isinstance(value, bytes) else str(value)
+      return base64.b64encode(value).decode('utf-8') if isinstance(value, bytes) else str(value)
     else:
       return str(value)
 
@@ -84,10 +84,8 @@ cdef class Params:
       key_type = self.get_key_type(key)
       str_value = self._convert_to_string(value, key_type)
     else:
-      if isinstance(value, bytes):
-        str_value = base64.b64encode(value).decode('utf-8')
-      else:
-        str_value = str(value)
+      key_type = ParamKeyType.BYTES if isinstance(value, bytes) else ParamKeyType.STRING
+      str_value = self._convert_to_string(value, key_type)
     return str_value.encode('utf-8')
 
   def get(self, key, encoding=None, return_default=True):

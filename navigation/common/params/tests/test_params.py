@@ -33,10 +33,10 @@ class TestParams:
   def test_get_nonexistent_key(self):
     assert self.params.get("nonexistent") is None
 
-  def test_get_with_bytes_encoding(self):
+  def test_get_with_bytes_encoding(self):  # test encoding getter
     test_bytes = b"test bytes"
     self.params.put("bytes_key", test_bytes)
-    result = self.params.get("bytes_key")
+    result = self.params.get("bytes_key", encoding='bytes')
     assert result == test_bytes
 
   def test_get_mapbox_token(self):
