@@ -11,6 +11,19 @@ class MapboxIntegration:
     self.params = Params()
     self.params_capnp = navigation
 
+  def _load_mapbox_settings(self):
+    param_value = self.params.get("MapboxSettings", encoding='bytes')
+    settings = self.params_capnp.MapboxSettings.new_message()
+    if param_value:
+      with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
+        settings.lastGPSPosition = existing.lastGPSPosition
+        settings.navData = existing.navData
+    else:
+      settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
+      settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
+      settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
+    return settings
+
   def get_public_token(self):
     token = self.params.get('MapboxToken', encoding='utf8')
     return token
@@ -67,21 +80,7 @@ class MapboxIntegration:
       latitude = float(postvars.get("latitude"))
       longitudinal = float(postvars.get("longitude"))
       name = postvars.get("name") if postvars.get("name") is not None else ""
-      param_value = self.params.get("MapboxSettings", encoding='bytes')
-      settings = self.params_capnp.MapboxSettings.new_message()
-      if param_value:
-        with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
-          settings.lastGPSPosition.longitude = existing.lastGPSPosition.longitude
-          settings.lastGPSPosition.latitude = existing.lastGPSPosition.latitude
-          settings.navData.current.latitude = existing.navData.current.latitude
-          settings.navData.current.longitude = existing.navData.current.longitude
-          settings.navData.current.placeName = existing.navData.current.placeName
-          settings.navData.cache = existing.navData.cache
-          settings.navData.route = existing.navData.route
-      else:
-        settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
-        settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
-        settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
+      settings = self._load_mapbox_settings()
       print(f"nav_confirmed {latitude}, {longitudinal}, {name}")
       if name == "":
         name =  str(latitude) + "," + str(longitudinal)
@@ -132,19 +131,7 @@ class MapboxIntegration:
       self.params.put("MapboxSettings", settings.to_bytes())
 
   def update_gps_position(self, longitude, latitude):
-    param_value = self.params.get("MapboxSettings", encoding='bytes')
-    settings = self.params_capnp.MapboxSettings.new_message()
-    if param_value:
-      with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
-        settings.navData.current.latitude = existing.navData.current.latitude
-        settings.navData.current.longitude = existing.navData.current.longitude
-        settings.navData.current.placeName = existing.navData.current.placeName
-        settings.navData.cache = existing.navData.cache
-        settings.navData.route = existing.navData.route
-    else:
-      settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
-      settings.navData.cache = self.params_capnp.MapboxSettings.NavDestinationsList.new_message()
-      settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
+    settings = self._load_mapbox_settings()
     settings.lastGPSPosition.longitude = longitude
     settings.lastGPSPosition.latitude = latitude
     self.params.put("MapboxSettings", settings.to_bytes())
