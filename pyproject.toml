@@ -16,6 +16,8 @@ dependencies = [
     "contextily",
     "cartopy",
     "cython",
+    "pyzmq>=27.1.0",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 [project.optional-dependencies]
