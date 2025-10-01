@@ -1,5 +1,0 @@
-services:
-  - name: navigationd
-    port: 3001
-    rate_hz: 5
-    schema: MapboxSettings
