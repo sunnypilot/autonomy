@@ -1,8 +1,9 @@
 import time
-from messaging.messenger import SubMaster
+import messaging.messenger as messenger
+
 
 def main():
-  sm = SubMaster()
+  sm = messenger.SubMaster()
 
   while True:
     for name in sm.services.keys():
