@@ -1,9 +1,10 @@
 import threading
 import time
-import yaml
-import capnp
-import zmq
 import logging
+
+import capnp
+import yaml
+import zmq
 
 
 schema = capnp.load("messaging/autonomy.capnp")
@@ -39,7 +40,7 @@ class PubMaster:
 
 class SubMaster:
   """Subscribes to multiple ZMQ publisher sockets and maintains latest messages."""
-  def __init__(self, service_names=None, registry_path="messaging/services.yaml", hz: int = 100, timeout_seconds: float = 5.0) -> None:
+  def __init__(self, service_names=None, registry_path="messaging/services.yaml", timeout_seconds: float = 5.0) -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     if service_names is None:
       service_names = list(self.registry.keys())
@@ -68,7 +69,6 @@ class SubMaster:
         "socket": socket,
         "schema_type": schema_type,
         "last_data": None,
-        "last_msg": None,
         "received_at": None,
       }
       thread = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
@@ -77,7 +77,6 @@ class SubMaster:
 
   def _loop(self, name) -> None:
     socket = self.services[name]["socket"]
-    schema_type = self.services[name]["schema_type"]
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
 
@@ -86,11 +85,9 @@ class SubMaster:
       if socket in socks and socks[socket] == zmq.POLLIN:
         try:
           data = socket.recv()
-          with schema_type.from_bytes(data) as msg:
-            with self._lock:
-              self.services[name]["last_data"] = data
-              self.services[name]["last_msg"] = msg
-              self.services[name]["received_at"] = time.monotonic()
+          with self._lock:
+            self.services[name]["last_data"] = data
+            self.services[name]["received_at"] = time.monotonic()
         except Exception as e:
           logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
 
