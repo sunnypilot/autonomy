@@ -1,5 +1,7 @@
-@0x8d30477844c72468;
-struct MapboxSettings {
+@0xb779187b703db5aa;
+
+
+struct MapboxSettings @0x8d30477844c72468 {
   searchInput @0 :Int32;
   navData @1 :NavData;
   timestamp @2 :UInt64;
