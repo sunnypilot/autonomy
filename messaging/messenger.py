@@ -101,8 +101,8 @@ class SubMaster:
       if data and received_at and (time.monotonic() - received_at) > timeout:
         return None
       if data:
-        cm = self.services[name]["schema_type"].from_bytes(data)
-        return cm.__enter__()
+        with self.services[name]["schema_type"].from_bytes(data) as context_manager:
+          return context_manager
       return None
 
   @property
