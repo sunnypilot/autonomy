@@ -68,6 +68,7 @@ class SubMaster:
       self.services[name] = {
         "socket": socket,
         "schema_type": schema_type,
+        "last_data": None,
         "last_msg": None,
         "received_at": None,
       }
@@ -88,7 +89,8 @@ class SubMaster:
           data = socket.recv()
           with schema_type.from_bytes(data) as msg:
             with self._lock:
-              self.services[name]["last_msg"] = msg.to_dict()
+              self.services[name]["last_data"] = data
+              self.services[name]["last_msg"] = msg
               self.services[name]["received_at"] = time.monotonic()
         except Exception as e:
           logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
@@ -97,11 +99,14 @@ class SubMaster:
     with self._lock:
       if name not in self.services:
         raise KeyError(f"Service {name} not subscribed")
-      msg = self.services[name]["last_msg"]
+      data = self.services[name]["last_data"]
       received_at = self.services[name]["received_at"]
-      if msg and received_at and (time.monotonic() - received_at) > self.timeout_seconds:
+      if data and received_at and (time.monotonic() - received_at) > self.timeout_seconds:
         return None
-      return msg
+      if data:
+        cm = self.services[name]["schema_type"].from_bytes(data)
+        return cm.__enter__()
+      return None
 
   @property
   def alive(self):
