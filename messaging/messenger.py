@@ -40,7 +40,7 @@ class PubMaster:
 
 class SubMaster:
   """Subscribes to multiple ZMQ publisher sockets and maintains latest messages."""
-  def __init__(self, service_names=None, registry_path="messaging/services.yaml", timeout_seconds: float = 5.0) -> None:
+  def __init__(self, service_names=None, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     if service_names is None:
       service_names = list(self.registry.keys())
@@ -49,7 +49,6 @@ class SubMaster:
 
     self.services: dict[str, dict] = {}
     self._lock = threading.Lock()
-    self.timeout_seconds: float = timeout_seconds
     self.context = zmq.Context()
     self._running: bool = True
     self._threads: list[threading.Thread] = []
@@ -70,6 +69,7 @@ class SubMaster:
         "schema_type": schema_type,
         "last_data": None,
         "received_at": None,
+        "timeout_seconds": 10.0 / svc["rate_hz"],
       }
       thread = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
       thread.start()
@@ -97,7 +97,8 @@ class SubMaster:
         raise KeyError(f"Service {name} not subscribed")
       data = self.services[name]["last_data"]
       received_at = self.services[name]["received_at"]
-      if data and received_at and (time.monotonic() - received_at) > self.timeout_seconds:
+      timeout = self.services[name]["timeout_seconds"]
+      if data and received_at and (time.monotonic() - received_at) > timeout:
         return None
       if data:
         cm = self.services[name]["schema_type"].from_bytes(data)
@@ -111,7 +112,7 @@ class SubMaster:
       return {
         name: (
           self.services[name]["received_at"] is not None and
-          (time.monotonic() - self.services[name]["received_at"]) < (10. / self.registry[name]["rate_hz"])
+          (time.monotonic() - self.services[name]["received_at"]) < (self.services[name]["timeout_seconds"])
         )
         for name in self.services
       }
