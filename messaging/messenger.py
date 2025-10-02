@@ -9,15 +9,14 @@ import logging
 schema = capnp.load("messaging/autonomy.capnp")
 
 def load_registry(path="messaging/services.yaml") -> dict:
-  with open(path) as f:
-    config = yaml.safe_load(f)
+  with open(path) as file:
+    config = yaml.safe_load(file)
   registry = {}
-  for svc in config["services"]:
-    registry[svc["name"]] = {
-      "port": svc["port"],
-      "schema_type": getattr(schema, svc["schema"]),
-      "rate_hz": svc.get("rate_hz", 1),
-      "sub_port": svc.get("sub_port"),
+  for service in config["services"]:
+    registry[service["name"]] = {
+      "port": service["port"],
+      "schema_type": getattr(schema, service["schema"]),
+      "rate_hz": service.get("rate_hz", 1),
     }
   return registry
 
@@ -25,9 +24,9 @@ def load_registry(path="messaging/services.yaml") -> dict:
 class PubMaster:
   """Publishes messages to ZMQ publisher socket."""
   def __init__(self, name, registry_path="messaging/services.yaml") -> None:
-    self.registry = load_registry(registry_path)
-    self.port = self.registry[name]["port"]
-    self.rate_hz = self.registry[name]["rate_hz"]
+    self.registry: dict[str, dict] = load_registry(registry_path)
+    self.port: int = self.registry[name]["port"]
+    self.rate_hz: int = self.registry[name]["rate_hz"]
     
     self.context = zmq.Context()
     self.socket = self.context.socket(zmq.PUB)
@@ -41,18 +40,18 @@ class PubMaster:
 class SubMaster:
   """Subscribes to multiple ZMQ publisher sockets and maintains latest messages."""
   def __init__(self, service_names=None, registry_path="messaging/services.yaml", hz: int = 100, timeout_seconds: float = 5.0) -> None:
-    self.registry = load_registry(registry_path)
+    self.registry: dict[str, dict] = load_registry(registry_path)
     if service_names is None:
       service_names = list(self.registry.keys())
     if isinstance(service_names, str):
       service_names = [service_names]
 
-    self.services = {}
+    self.services: dict[str, dict] = {}
     self._lock = threading.Lock()
-    self.timeout_seconds = timeout_seconds
+    self.timeout_seconds: float = timeout_seconds
     self.context = zmq.Context()
-    self._running = True
-    self._threads = []
+    self._running: bool = True
+    self._threads: list[threading.Thread] = []
 
     for name in service_names:
       if name not in self.registry:
@@ -72,9 +71,9 @@ class SubMaster:
         "last_msg": None,
         "received_at": None,
       }
-      t = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
-      t.start()
-      self._threads.append(t)
+      thread = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
+      thread.start()
+      self._threads.append(thread)
 
   def _loop(self, name) -> None:
     socket = self.services[name]["socket"]
