@@ -14,9 +14,14 @@ def load_registry(path="messaging/services.yaml") -> dict:
     config = yaml.safe_load(file)
   registry = {}
   for service in config["services"]:
+    schema_name = service["schema"]
+    try:
+      schema_type = getattr(schema, schema_name)
+    except AttributeError:
+      raise ValueError(f"Schema '{schema_name}' not found in capnp for service '{service['name']}'")
     registry[service["name"]] = {
       "port": service["port"],
-      "schema_type": getattr(schema, service["schema"]),
+      "schema_type": schema_type,
       "rate_hz": service.get("rate_hz", 1),
     }
   return registry
@@ -47,6 +52,8 @@ class SubMaster:
     if isinstance(service_names, str):
       service_names = [service_names]
 
+    logging.warning(f"SubMaster initializing with services: {service_names}")
+
     self.services: dict[str, dict] = {}
     self._lock = threading.Lock()
     self.context = zmq.Context()
@@ -70,6 +77,8 @@ class SubMaster:
         "last_data": None,
         "received_at": None,
         "timeout_seconds": 10.0 / svc["rate_hz"],
+        "rate_hz": svc["rate_hz"],
+        "last_timeout_logged": None,
       }
       thread = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
       thread.start()
@@ -79,9 +88,11 @@ class SubMaster:
     socket = self.services[name]["socket"]
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
+    rate_hz = self.services[name]["rate_hz"]
+    timeout_ms = min(1000, max(100, int(1000 / rate_hz)))
 
     while self._running:
-      socks = dict(poller.poll(timeout=1000))  # 1 second timeout
+      socks = dict(poller.poll(timeout=timeout_ms))  # Timeout based on service rate
       if socket in socks and socks[socket] == zmq.POLLIN:
         try:
           data = socket.recv()
@@ -99,6 +110,7 @@ class SubMaster:
       received_at = self.services[name]["received_at"]
       timeout = self.services[name]["timeout_seconds"]
       if data and received_at and (time.monotonic() - received_at) > timeout:
+        logging.warning(f"Message for service {name} timed out (age: {time.monotonic() - received_at:.2f}s > {timeout:.2f}s)")
         return None
       if data:
         with self.services[name]["schema_type"].from_bytes(data) as context_manager:
@@ -118,6 +130,7 @@ class SubMaster:
       }
 
   def close(self):
+    logging.warning("Submaster shutting down")
     self._running = False
     for thread in self._threads:
       thread.join(timeout=1.0)
