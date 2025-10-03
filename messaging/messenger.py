@@ -3,6 +3,7 @@ import time
 import logging
 import asyncio
 from pathlib import Path
+from dataclasses import dataclass
 
 import capnp
 import yaml
@@ -11,6 +12,11 @@ import zmq.asyncio as zmq_async
 
 
 schema = capnp.load("messaging/autonomy.capnp")
+
+@dataclass
+class CachedMessage:
+    msg: object = None
+    capnp_reader: object = None
 
 def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
   with Path(path).open() as file:
@@ -61,7 +67,7 @@ class SubMaster:
     self._lock = threading.Lock()
     self.context = zmq_async.Context()
     self._running: bool = True
-    self._threads: list[threading.Thread] = []
+    self._thread: threading.Thread | None = None
 
     for name in service_names:
       if name not in self.registry:
@@ -82,29 +88,25 @@ class SubMaster:
         "timeout_seconds": 10.0 / svc["rate_hz"],
         "rate_hz": svc["rate_hz"],
         "last_timeout_logged": None,
-        "cached": {"msg": None, "capnp_reader": None},
+        "cached": CachedMessage(),
       }
-      thread = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
-      thread.start()
-      self._threads.append(thread)
+    self._thread = threading.Thread(target=self._run_all_loops, daemon=True, name="SubMaster-all")
+    self._thread.start()
 
   def _update_cached_msg(self, name, data=None):
+    """Update the cached message for a service."""
     cached = self.services[name]["cached"]
-    if cached["capnp_reader"] is not None:
-      cached["capnp_reader"].__exit__(None, None, None)
+    if cached.capnp_reader is not None:
+      cached.capnp_reader.__exit__(None, None, None)
     if data is not None:
-      cached["capnp_reader"] = self.services[name]["schema_type"].from_bytes(data)  # deserialize message
-      cached["msg"] = cached["capnp_reader"].__enter__()
+      cached.capnp_reader = self.services[name]["schema_type"].from_bytes(data)  # deserialize message
+      cached.msg = cached.capnp_reader.__enter__()
     else:
-      cached["msg"] = None
-      cached["capnp_reader"] = None
-
-  def _loop(self, name) -> None:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(self._async_loop(name))
+      cached.msg = None
+      cached.capnp_reader = None
 
   async def _async_loop(self, name):
+    """Asynchronously receive messages for a service."""
     socket = self.services[name]["socket"]
     while self._running:
       try:
@@ -117,6 +119,13 @@ class SubMaster:
         continue
       except Exception as e:
         logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
+
+  def _run_all_loops(self):
+    """Run all async loops concurrently in a single event loop."""
+    asyncio.run(self._run_all_async_loops())
+
+  async def _run_all_async_loops(self):
+    await asyncio.gather(*[self._async_loop(name) for name in self.services])
 
   def __getitem__(self, name):
     with self._lock:
@@ -136,7 +145,7 @@ class SubMaster:
           return None
       
       if data:
-        return self.services[name]["cached"]["msg"]
+        return self.services[name]["cached"].msg
       return None
 
   @property
@@ -153,12 +162,12 @@ class SubMaster:
 
   def close(self):
     """Shutdown the subscriber and clean up."""
-    logging.warning("Submaster shutting down")
+    logging.warning("SubMaster shutting down")
     self._running = False
     for name in self.services:
       self._update_cached_msg(name)
-    for thread in self._threads:
-      thread.join(timeout=1.0)
+    if self._thread:
+      self._thread.join(timeout=1.0)
     for service in self.services.values():
       service['socket'].close()
     self.context.term()

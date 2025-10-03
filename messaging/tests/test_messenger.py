@@ -6,6 +6,16 @@ import pytest
 import messaging.messenger as messenger
 
 
+def poll_for_message(subscriber, service_name, timeout=1.0, poll_interval=0.0001):
+  """Poll subscriber for a message until received or timeout."""
+  start_time = time.monotonic()
+  while (time.monotonic() - start_time) < timeout:
+    msg = subscriber[service_name]
+    if msg is not None:
+      return msg
+    time.sleep(poll_interval)
+  return None
+
 def test_load_registry():
   registry = messenger.load_registry("messaging/services.yaml")
   assert "navigationd" in registry
@@ -63,9 +73,7 @@ services:
     msg.timestamp = 777888
     pub.publish(msg)
 
-    time.sleep(0.001)
-
-    received = sub["test_service"]
+    received = poll_for_message(sub, "test_service")
     assert received is not None
     assert received.searchInput == 999
     assert received.timestamp == 777888
@@ -106,11 +114,14 @@ services:
     msg2.searchInput = 222
     pub2.publish(msg2)
 
-    time.sleep(0.001)
-
+    received1 = poll_for_message(sub1, "service1")
+    received2 = poll_for_message(sub2, "service2")
+    
     # Verify both received
-    assert sub1["service1"].searchInput == 111
-    assert sub2["service2"].searchInput == 222
+    assert received1 is not None
+    assert received1.searchInput == 111
+    assert received2 is not None
+    assert received2.searchInput == 222
   except Exception as e:
     print(f"Error during multiple services test: {e}")
     raise
