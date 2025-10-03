@@ -89,7 +89,7 @@ class SubMaster:
     poller = zmq.Poller()
     poller.register(socket, zmq.POLLIN)
     rate_hz = self.services[name]["rate_hz"]
-    timeout_ms = min(1000, max(100, int(1000 / rate_hz)))
+    timeout_ms = min(1000, max(10, int(1000 / rate_hz)))
 
     while self._running:
       socks = dict(poller.poll(timeout=timeout_ms))  # Timeout based on service rate
