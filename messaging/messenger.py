@@ -15,8 +15,9 @@ schema = capnp.load("messaging/autonomy.capnp")
 
 @dataclass
 class CachedMessage:
-    msg: object = None
-    capnp_reader: object = None
+  msg: object = None
+  capnp_reader: object = None
+
 
 def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
   with Path(path).open() as file:
