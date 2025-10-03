@@ -22,13 +22,16 @@ class CachedMessage:
 def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
   with Path(path).open() as file:
     config = yaml.safe_load(file)
-  registry = {}
+
+  registry: dict[str, dict] = {}
+
   for service in config["services"]:
     schema_name = service["schema"]
     try:
       schema_type = getattr(schema, schema_name)
     except AttributeError:
       raise ValueError(f"Schema '{schema_name}' not found in capnp for service '{service['name']}'")
+
     registry[service["name"]] = {
       "port": service["port"],
       "schema_type": schema_type,
@@ -42,7 +45,7 @@ class PubMaster:
   def __init__(self, name, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     self.port: int = self.registry[name]["port"]
-    self.rate_hz: float = self.registry[name]["rate_hz"]
+    self.rate_hz: float = self.registry[name]["rate_hz"]  # Used by clients to determine publish rate (1.0/rate_hz)
     
     self.context = zmq.Context()
     self.socket = self.context.socket(zmq.PUB)
@@ -65,12 +68,12 @@ class SubMaster:
     logging.warning(f"SubMaster initializing with services: {service_names}")
 
     self.services: dict[str, dict] = {}
-    self._lock = threading.Lock()
-    self.context = zmq_async.Context()
-    self._running: bool = True
-    self._thread: threading.Thread | None = None
+    self._lock = threading.Lock()  # Lock for thread safety
+    self.context = zmq_async.Context()  # Use asyncio-compatible context
+    self._running: bool = True  # Control flag for async loops
+    self._thread: threading.Thread | None = None  # Thread for running async loops
 
-    for name in service_names:
+    for name in service_names:  # Initialize each service
       if name not in self.registry:
         raise ValueError(f"Unknown service {name}")
       svc = self.registry[name]
@@ -97,12 +100,12 @@ class SubMaster:
   def _update_cached_msg(self, name, data=None):
     """Update the cached message for a service."""
     cached = self.services[name]["cached"]
-    if cached.capnp_reader is not None:
+    if cached.capnp_reader is not None:  # clean up previous reader
       cached.capnp_reader.__exit__(None, None, None)
     if data is not None:
       cached.capnp_reader = self.services[name]["schema_type"].from_bytes(data)  # deserialize message
       cached.msg = cached.capnp_reader.__enter__()
-    else:
+    else:  # clear cached message
       cached.msg = None
       cached.capnp_reader = None
 
