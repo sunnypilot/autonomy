@@ -1,16 +1,19 @@
 import threading
 import time
 import logging
+import asyncio
+from pathlib import Path
 
 import capnp
 import yaml
 import zmq
+import zmq.asyncio as zmq_async
 
 
 schema = capnp.load("messaging/autonomy.capnp")
 
-def load_registry(path="messaging/services.yaml") -> dict:
-  with open(path) as file:
+def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
+  with Path(path).open() as file:
     config = yaml.safe_load(file)
   registry = {}
   for service in config["services"]:
@@ -56,7 +59,7 @@ class SubMaster:
 
     self.services: dict[str, dict] = {}
     self._lock = threading.Lock()
-    self.context = zmq.Context()
+    self.context = zmq_async.Context()
     self._running: bool = True
     self._threads: list[threading.Thread] = []
 
@@ -97,23 +100,23 @@ class SubMaster:
       cached["capnp_reader"] = None
 
   def _loop(self, name) -> None:
-    socket = self.services[name]["socket"]
-    poller = zmq.Poller()
-    poller.register(socket, zmq.POLLIN)
-    rate_hz = self.services[name]["rate_hz"]
-    timeout_ms = min(1000, max(10, int(1000 / rate_hz)))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(self._async_loop(name))
 
+  async def _async_loop(self, name):
+    socket = self.services[name]["socket"]
     while self._running:
-      socks = dict(poller.poll(timeout=timeout_ms))  # Timeout based on service rate
-      if socket in socks and socks[socket] == zmq.POLLIN:
-        try:
-          data = socket.recv()
-          with self._lock:
-            self.services[name]["last_data"] = data
-            self.services[name]["received_at"] = time.monotonic()
-            self._update_cached_msg(name, data)
-        except Exception as e:
-          logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
+      try:
+        data = await asyncio.wait_for(socket.recv(), timeout=0.1)
+        with self._lock:
+          self.services[name]["last_data"] = data
+          self.services[name]["received_at"] = time.monotonic()
+          self._update_cached_msg(name, data)
+      except asyncio.TimeoutError:
+        continue
+      except Exception as e:
+        logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
 
   def __getitem__(self, name):
     with self._lock:
@@ -149,6 +152,7 @@ class SubMaster:
       }
 
   def close(self):
+    """Shutdown the subscriber and clean up."""
     logging.warning("Submaster shutting down")
     self._running = False
     for name in self.services:
