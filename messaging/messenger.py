@@ -32,7 +32,7 @@ class PubMaster:
   def __init__(self, name, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     self.port: int = self.registry[name]["port"]
-    self.rate_hz: int = self.registry[name]["rate_hz"]
+    self.rate_hz: float = self.registry[name]["rate_hz"]
     
     self.context = zmq.Context()
     self.socket = self.context.socket(zmq.PUB)
@@ -79,10 +79,22 @@ class SubMaster:
         "timeout_seconds": 10.0 / svc["rate_hz"],
         "rate_hz": svc["rate_hz"],
         "last_timeout_logged": None,
+        "cached": {"msg": None, "capnp_reader": None},
       }
       thread = threading.Thread(target=self._loop, args=(name,), daemon=True, name=f"SubMaster-{name}")
       thread.start()
       self._threads.append(thread)
+
+  def _update_cached_msg(self, name, data=None):
+    cached = self.services[name]["cached"]
+    if cached["capnp_reader"] is not None:
+      cached["capnp_reader"].__exit__(None, None, None)
+    if data is not None:
+      cached["capnp_reader"] = self.services[name]["schema_type"].from_bytes(data)  # deserialize message
+      cached["msg"] = cached["capnp_reader"].__enter__()
+    else:
+      cached["msg"] = None
+      cached["capnp_reader"] = None
 
   def _loop(self, name) -> None:
     socket = self.services[name]["socket"]
@@ -99,6 +111,7 @@ class SubMaster:
           with self._lock:
             self.services[name]["last_data"] = data
             self.services[name]["received_at"] = time.monotonic()
+            self._update_cached_msg(name, data)
         except Exception as e:
           logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
 
@@ -109,17 +122,23 @@ class SubMaster:
       data = self.services[name]["last_data"]
       received_at = self.services[name]["received_at"]
       timeout = self.services[name]["timeout_seconds"]
-      if data and received_at and (time.monotonic() - received_at) > timeout:
-        logging.warning(f"Message for service {name} timed out (age: {time.monotonic() - received_at:.2f}s > {timeout:.2f}s)")
-        return None
+      
+      if data is not None and received_at is not None:
+        age = time.monotonic() - received_at
+        if age > timeout:  # log warning every second if message is stale
+          if (last_logged := self.services[name]["last_timeout_logged"]) is None or time.monotonic() - last_logged > 1.0:
+            logging.warning(f"Message for service {name} timed out (age: {age:.2f}s > {timeout:.2f}s)")
+            self.services[name]["last_timeout_logged"] = time.monotonic()
+          self._update_cached_msg(name)
+          return None
+      
       if data:
-        with self.services[name]["schema_type"].from_bytes(data) as context_manager:
-          return context_manager
+        return self.services[name]["cached"]["msg"]
       return None
 
   @property
   def alive(self):
-    # Return a dict of service name to a bool indicating if the last message was received within timeout
+    """Return a dict of service name to a bool indicating if the last message was received within timeout"""
     with self._lock:
       return {
         name: (
@@ -132,13 +151,13 @@ class SubMaster:
   def close(self):
     logging.warning("Submaster shutting down")
     self._running = False
+    for name in self.services:
+      self._update_cached_msg(name)
     for thread in self._threads:
       thread.join(timeout=1.0)
-    for svc in self.services.values():
-      if 'socket' in svc and svc['socket']:
-        svc['socket'].close()
-    if hasattr(self, 'context') and self.context:
-      self.context.term()
+    for service in self.services.values():
+      service['socket'].close()
+    self.context.term()
 
   def __enter__(self):
     return self
