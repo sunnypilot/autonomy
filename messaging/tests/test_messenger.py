@@ -66,7 +66,7 @@ services:
   try:
     pub = messenger.PubMaster("test_service", registry_path=temp_path)
     sub = messenger.SubMaster("test_service", registry_path=temp_path)
-    time.sleep(0.001)  # allow sockets to connect. 1ms should be enough on localhost
+    time.sleep(0.005)  # allow sockets to connect. 5ms should be enough on localhost
 
     msg = messenger.schema.MapboxSettings.new_message()
     msg.searchInput = 999
@@ -103,7 +103,7 @@ services:
     pub2 = messenger.PubMaster("service2", registry_path=temp_path)
     sub1 = messenger.SubMaster("service1", registry_path=temp_path)
     sub2 = messenger.SubMaster("service2", registry_path=temp_path)
-    time.sleep(0.001)
+    time.sleep(0.005)
 
     # Send different messages
     msg1 = messenger.schema.MapboxSettings.new_message()
