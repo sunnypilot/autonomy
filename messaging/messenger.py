@@ -13,7 +13,6 @@ import zmq.asyncio as zmq_async
 
 schema = capnp.load("messaging/autonomy.capnp")
 
-# This big chonk needs to be reviewed piecewise.
 
 @dataclass
 class CachedMessage:
@@ -69,27 +68,27 @@ class SubMaster:
 
     self.services: dict[str, dict] = {}
     self._lock = threading.Lock()  # Lock for thread safety
-    self.context = zmq_async.Context()  # Use asyncio-compatible context
-    self._running: bool = True  # Control flag for async loops
+    self.context = zmq_async.Context()  # Use asyncio context
+    self._running: bool = True  # Boolean for async loops
     self._thread: threading.Thread | None = None  # Thread for running async loops
 
     for name in service_names:  # Initialize each service
       if name not in self.registry:
         raise ValueError(f"Unknown service {name}")
-      svc = self.registry[name]
-      schema_type = svc["schema_type"]
-      
+      service = self.registry[name]
+      schema_type = service["schema_type"]
+
       socket = self.context.socket(zmq.SUB)
       socket.connect(f"ipc:///tmp/{name}.ipc")
       socket.setsockopt(zmq.SUBSCRIBE, b"")  # Subscribe to all messages
-      
+
       self.services[name] = {
         "socket": socket,
         "schema_type": schema_type,
         "last_data": None,
         "received_at": None,
-        "timeout_seconds": 10.0 / svc["rate_hz"],
-        "rate_hz": svc["rate_hz"],
+        "timeout_seconds": 10.0 / service["rate_hz"],
+        "rate_hz": service["rate_hz"],
         "last_timeout_logged": None,
         "cached": CachedMessage(),
       }
@@ -123,8 +122,7 @@ class SubMaster:
       except Exception as e:
         logging.error(f"Error receiving message for {name}: {e}", exc_info=True)
 
-  def _run_all_loops(self):
-    """Run all async loops concurrently in a single event loop."""
+  def _run_all_loops(self):  # Run all loops concurrently in a single event loop.
     asyncio.run(self._run_all_async_loops())
 
   async def _run_all_async_loops(self):
@@ -137,7 +135,7 @@ class SubMaster:
       data = self.services[name]["last_data"]
       received_at = self.services[name]["received_at"]
       timeout = self.services[name]["timeout_seconds"]
-      
+
       if data is not None and received_at is not None:
         age = time.monotonic() - received_at
         if age > timeout:  # log warning every second if message is stale
@@ -146,14 +144,14 @@ class SubMaster:
             self.services[name]["last_timeout_logged"] = time.monotonic()
           self._update_cached_msg(name)
           return None
-      
+
       if data:
         return self.services[name]["cached"].msg
       return None
 
   @property
   def alive(self):
-    """Return a dict of service name to a bool indicating if the last message was received within timeout"""
+    """Return a dict of service names to booleans indicating if the last message was received within timeout"""
     with self._lock:
       return {
         name: (
@@ -175,8 +173,5 @@ class SubMaster:
       service['socket'].close()
     self.context.term()
 
-  def __enter__(self):
-    return self
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
+  def __del__(self):
     self.close()

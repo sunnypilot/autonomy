@@ -20,13 +20,13 @@ class Navigation:
     self.pm = messenger.PubMaster('navigationd')
     self.latitude: float = 0.0
     self.longitude: float = 0.0
-  
+
   def update_location(self):
     nav = self.sm['navigationd']
-    if nav:  # messenger may return None if message timed out after 5 seconds (default)
+    if nav:  # messenger will return None if the message times out
       self.latitude = nav.navData.current.latitude
       self.longitude = nav.navData.current.longitude
-  
+
   def publish_location(self, latitude: float, longitude: float):
     msg = messenger.schema.MapboxSettings.new_message()
     msg.navData.current.latitude = latitude
