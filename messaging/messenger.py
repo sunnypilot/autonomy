@@ -13,6 +13,8 @@ import zmq.asyncio as zmq_async
 
 schema = capnp.load("messaging/autonomy.capnp")
 
+# This big chonk needs to be reviewed piecewise.
+
 @dataclass
 class CachedMessage:
   msg: object = None
@@ -34,8 +36,8 @@ def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
 
     registry[service["name"]] = {
       "port": service["port"],
+      "rate_hz": service["rate_hz"],
       "schema_type": schema_type,
-      "rate_hz": service.get("rate_hz", 1),
     }
   return registry
 
