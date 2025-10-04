@@ -13,7 +13,7 @@ def main():
         print(f"[{name}] {msg}")
       else:
         print(f"No recent message for {name}")
-    time.sleep(1.0)
+    time.sleep(0.1)
 
 if __name__ == "__main__":
   main()
