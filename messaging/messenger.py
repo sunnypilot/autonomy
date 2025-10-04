@@ -13,7 +13,6 @@ import zmq.asyncio as zmq_async
 
 schema = capnp.load("messaging/autonomy.capnp")
 
-# This big chonk needs to be reviewed piecewise.
 
 @dataclass
 class CachedMessage:
@@ -175,8 +174,5 @@ class SubMaster:
       service['socket'].close()
     self.context.term()
 
-  def __enter__(self):
-    return self
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
+  def __del__(self):
     self.close()
