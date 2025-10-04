@@ -48,10 +48,10 @@ class PubMaster:
     self.registry: dict[str, dict] = load_registry(registry_path)
     self.port: int = self.registry[name]["port"]
     self.rate_hz: float = self.registry[name]["rate_hz"]  # Used by clients to determine publish rate (1.0/rate_hz)
-    
+
     self.context = zmq.Context()
     self.socket = self.context.socket(zmq.PUB)
-    self.socket.bind(f"tcp://localhost:{self.port}")
+    self.socket.bind(f"tcp://127.0.0.1:{self.port}")
 
   def publish(self, msg) -> None:
     serialized = msg.to_bytes()
