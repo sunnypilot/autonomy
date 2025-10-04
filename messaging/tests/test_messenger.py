@@ -101,9 +101,6 @@ services:
     assert received1.searchInput == 111
     assert received2 is not None
     assert received2.searchInput == 222
-  except Exception as e:
-    print(f"Error during multiple services test: {e}")
-    raise
   finally:
     os.unlink(temp_path)
 
