@@ -81,6 +81,6 @@ disable_error_code = "annotation-unchecked"
 addopts = "--ignore=mutants"
 
 [tool.mutmut]
-paths_to_mutate = ["navigation"]
+paths_to_mutate = ["messaging", "navigation"]
 test_command = "pytest -x --tb=short"
 exclude = [".venv", ".venv/**", "/opt/venv", "/opt/venv/**", ".git", ".git/**"]

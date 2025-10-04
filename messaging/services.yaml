@@ -1,0 +1,4 @@
+services:
+  - name: navigationd
+    rate_hz: 5
+    schema: MapboxSettings
