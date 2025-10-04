@@ -4,21 +4,44 @@ import psutil
 import tracemalloc
 import pytest
 
-os.environ["ENABLE_MEMORY_PROFILING"] = "1"
 import messaging.messenger as messenger
 
 
 def get_memory_stats(top=10):
   """Get top memory allocations for profiling."""
-  if not os.getenv("ENABLE_MEMORY_PROFILING"):
-    return "Memory profiling not enabled. Set ENABLE_MEMORY_PROFILING=1"
   snapshot = tracemalloc.take_snapshot()
-  top_stats = snapshot.statistics('lineno')[:top]
-  return "\n".join(str(stat) for stat in top_stats)
+  return "\n".join(str(stat) for stat in snapshot.statistics('lineno')[:top])
 
 
-@pytest.mark.skipif(not os.getenv("RUN_MEMORY_TEST"), reason="Memory test not enabled")
-def test_memory_leak_submaster():
+def analyze_memory_stats(stats_str):
+  """Analyze memory stats string and return key metrics."""
+  allocations = []
+
+  for line in stats_str.strip().split('\n'):
+    if 'size=' not in line or 'count=' not in line:
+      continue
+    if 'memory_profiler' in line:
+      continue
+
+    try:
+      # Parse: size=x KiB, count=x, average=x B
+      size_part = line.split('size=')[1].split(',')[0].strip()
+      count_part = line.split('count=')[1].split(',')[0].strip()
+      size_bytes = float(size_part.replace(' KiB', '')) * 1024 if 'KiB' in size_part else float(size_part.replace(' B', ''))
+      allocations.append((size_bytes, int(count_part), line))
+    except (ValueError, IndexError):
+      continue
+
+  return {
+    'total_allocations': len(allocations),
+    'top_allocation': max(allocations, key=lambda x: x[0]) if allocations else (0, 0, ''),
+    'allocations': allocations
+  }
+
+
+@pytest.mark.skipif(not os.getenv("RUN_MEMORY_TEST"), reason="not enabled, run export RUN_MEMORY_TEST=1")
+def test_memory_leak_submaster(capsys):
+  os.environ["ENABLE_MEMORY_PROFILING"] = "1"
   process = psutil.Process(os.getpid())
   initial_memory = process.memory_info().rss / 1024 / 1024  # bytes to MB
 
@@ -38,9 +61,29 @@ def test_memory_leak_submaster():
 
     final_memory = process.memory_info().rss / 1024 / 1024  # bytes to MB
     memory_increase = final_memory - initial_memory
-    print("Memory Stats:\n", get_memory_stats())
+    memory_stats = get_memory_stats()
+    print("Memory Stats:\n", memory_stats)
 
-    # Allow some increase, but flag above 10 MB
+    # flag if above 10 MB
     assert memory_increase < 10, f"Potential leak: {memory_increase:.2f} MB increase"
+
+    # Analyze memory allocations for potential leaks
+    stats_analysis = analyze_memory_stats(memory_stats)
+    assert stats_analysis['total_allocations'] > 0, "No memory allocations found"
+
+    top_size, _, top_line = stats_analysis['top_allocation']
+    assert top_size < 100 * 1024, f"Excessive allocation: {top_size/1024:.1f} KiB in {top_line}"
+
+    messenger_allocations = [allocation for allocation in stats_analysis['allocations'] 
+                            if 'messenger.py' in allocation[2]]
+
+    if messenger_allocations:
+      total_messenger_size = sum(allocation[0] for allocation in messenger_allocations)
+      assert total_messenger_size < 50 * 1024, f"Messenger memory usage too high: {total_messenger_size/1024:.1f} KiB"
+
+      for size, count, line in messenger_allocations:
+        if size < 1024:  # Small allocations
+          assert count < 1000, f"Too many small allocations in messenger: {count} objects of {size} bytes in {line}"
+
   finally:
     sub.close()

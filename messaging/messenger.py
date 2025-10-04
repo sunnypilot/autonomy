@@ -106,6 +106,7 @@ class SubMaster:
     self._thread = threading.Thread(target=self._run_all_loops, daemon=True, name="SubMaster-all")
     self._thread.start()
 
+  @profile_decorator
   def _update_cached_msg(self, name, data=None):
     """Update the cached message for a service."""
     cached = self.services[name]["cached"]
