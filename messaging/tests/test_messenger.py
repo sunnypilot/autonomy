@@ -51,35 +51,20 @@ def test_message_serialization():
     assert parsed.to_dict()["timestamp"] == 123456
 
 def test_pub_sub_integration():
-  # Create temp service config
-  with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as file:
-    file.write("""
-services:
-- name: test_service
-  rate_hz: 10
-  schema: MapboxSettings
-""")
-    temp_path = file.name
+  pub = messenger.PubMaster("navigationd")
+  sub = messenger.SubMaster("navigationd")
+  time.sleep(0.01)
 
-  try:
-    pub = messenger.PubMaster("test_service", registry_path=temp_path)
-    sub = messenger.SubMaster("test_service", registry_path=temp_path)
-    time.sleep(0.005)  # allow sockets to connect. 5ms should be enough. It's about 200hz so, not bad.
+  msg = messenger.schema.MapboxSettings.new_message()
+  msg.searchInput = 999
+  msg.timestamp = 777888
+  pub.publish(msg)
 
-    msg = messenger.schema.MapboxSettings.new_message()
-    msg.searchInput = 999
-    msg.timestamp = 777888
-    pub.publish(msg)
+  received = poll_for_message(sub, "navigationd")
+  assert received is not None
+  assert received.searchInput == 999
+  assert received.timestamp == 777888
 
-    received = poll_for_message(sub, "test_service")
-    assert received is not None
-    assert received.searchInput == 999
-    assert received.timestamp == 777888
-  except Exception as e:
-    print(f"Error during pub-sub integration test: {e}")
-    raise
-  finally:
-    os.unlink(temp_path)
 
 def test_multiple_services():
   with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as file:
