@@ -35,7 +35,6 @@ def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
       raise ValueError(f"Schema '{schema_name}' not found in capnp for service '{service['name']}'")
 
     registry[service["name"]] = {
-      "port": service["port"],
       "rate_hz": service["rate_hz"],
       "schema_type": schema_type,
     }
@@ -46,12 +45,11 @@ class PubMaster:
   """Publishes messages to ZMQ publisher socket."""
   def __init__(self, name, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
-    self.port: int = self.registry[name]["port"]
     self.rate_hz: float = self.registry[name]["rate_hz"]  # Used by clients to determine publish rate (1.0/rate_hz)
 
     self.context = zmq.Context()
     self.socket = self.context.socket(zmq.PUB)
-    self.socket.bind(f"tcp://127.0.0.1:{self.port}")
+    self.socket.bind(f"ipc:///tmp/{name}.ipc")
 
   def publish(self, msg) -> None:
     serialized = msg.to_bytes()
@@ -79,11 +77,10 @@ class SubMaster:
       if name not in self.registry:
         raise ValueError(f"Unknown service {name}")
       svc = self.registry[name]
-      port = svc["port"]
       schema_type = svc["schema_type"]
       
       socket = self.context.socket(zmq.SUB)
-      socket.connect(f"tcp://localhost:{port}")
+      socket.connect(f"ipc:///tmp/{name}.ipc")
       socket.setsockopt(zmq.SUBSCRIBE, b"")  # Subscribe to all messages
       
       self.services[name] = {

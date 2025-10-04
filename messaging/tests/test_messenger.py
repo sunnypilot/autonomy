@@ -20,21 +20,19 @@ def poll_for_message(subscriber, service_name, timeout=1.0, poll_interval=0.0001
 def test_load_registry():
   registry = messenger.load_registry("messaging/services.yaml")
   assert "navigationd" in registry
-  assert registry["navigationd"]["port"] == 3001
   assert registry["navigationd"]["rate_hz"] == 5
+  assert registry["navigationd"]["schema_type"] == messenger.schema.MapboxSettings
 
-def test_pub_master_init():
+def test_sub_and_pub_master_init():
   pub = messenger.PubMaster("navigationd")
-  assert pub.port == 3001
   assert pub.rate_hz == 5
+
+  sub = messenger.SubMaster("navigationd")
+  assert "navigationd" in sub.services
 
 def test_pub_master_unknown_service():
   with pytest.raises(KeyError):
     messenger.PubMaster("unknown_service")
-
-def test_sub_master_init():
-  sub = messenger.SubMaster("navigationd")
-  assert "navigationd" in sub.services
 
 def test_sub_master_unknown_service():
   with pytest.raises(ValueError):
@@ -58,7 +56,6 @@ def test_pub_sub_integration():
     file.write("""
 services:
 - name: test_service
-  port: 4004
   rate_hz: 10
   schema: MapboxSettings
 """)
@@ -89,11 +86,9 @@ def test_multiple_services():
     file.write("""
 services:
 - name: service1
-  port: 4005
   rate_hz: 5
   schema: MapboxSettings
 - name: service2
-  port: 4006
   rate_hz: 5
   schema: MapboxSettings
 """)
@@ -105,7 +100,6 @@ services:
     pub2 = messenger.PubMaster("service2", registry_path=temp_path)
     sub1 = messenger.SubMaster("service1", registry_path=temp_path)
     sub2 = messenger.SubMaster("service2", registry_path=temp_path)
-    time.sleep(0.005)
 
     msg1 = messenger.schema.MapboxSettings.new_message()
     msg1.searchInput = 111
