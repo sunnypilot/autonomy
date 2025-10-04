@@ -115,7 +115,7 @@ def test_alive_property():
     sub.services["navigationd"]["last_data"] = data  # send data, set to current time
     sub.services["navigationd"]["received_at"] = time.monotonic()
   assert sub.alive["navigationd"]
-  
+
   # fake an old message. This also tests timeout from __getitem__
   with sub._lock:
     sub.services["navigationd"]["received_at"] = time.monotonic() - 10
