@@ -30,11 +30,10 @@ def test_sub_and_pub_master_init():
   sub = messenger.SubMaster("navigationd")
   assert "navigationd" in sub.services
 
-def test_pub_master_unknown_service():
+def test_sub_and_pub_master_unknown_service():
   with pytest.raises(KeyError):
     messenger.PubMaster("unknown_service")
 
-def test_sub_master_unknown_service():
   with pytest.raises(ValueError):
     messenger.SubMaster("unknown_service")
 
@@ -105,37 +104,43 @@ services:
     os.unlink(temp_path)
 
 def test_alive_property():
+  pub = messenger.PubMaster("navigationd")
   sub = messenger.SubMaster("navigationd")
   assert not sub.alive["navigationd"]  # No messages yet
 
-  with sub._lock:
-    msg = messenger.schema.MapboxSettings.new_message()
-    msg.searchInput = 42
-    data = msg.to_bytes()
-    sub.services["navigationd"]["last_data"] = data  # send data, set to current time
-    sub.services["navigationd"]["received_at"] = time.monotonic()
+  msg = messenger.schema.MapboxSettings.new_message()
+  msg.searchInput = 42
+  data = pub.publish(msg)
+
+  sub.services["navigationd"]["last_data"] = data
+  sub.services["navigationd"]["received_at"] = time.monotonic()  # set to current time
   assert sub.alive["navigationd"]
 
-  # fake an old message. This also tests timeout from __getitem__
+  # fake an old message. This also tests timeout from getitem, which is 2 seconds for navigationd
   with sub._lock:
-    sub.services["navigationd"]["received_at"] = time.monotonic() - 10
+    sub.services["navigationd"]["received_at"] = time.monotonic() - 2.0
   assert not sub.alive["navigationd"]
 
 def test_nested_message_structure():
+  pub = messenger.PubMaster("navigationd")
+  sub = messenger.SubMaster("navigationd")
+  time.sleep(0.01)
+
   msg = messenger.schema.MapboxSettings.new_message()
-  msg.navData.current.latitude = 37.7749
-  msg.navData.current.longitude = -122.4194
+  msg.navData.current.latitude = 37.77493
+  msg.navData.current.longitude = -122.41945
   msg.navData.current.placeName = "San Francisco"
   msg.navData.route.steps = [  # something basic, this is one step of a fake route, but has enough detail to test the structure of the msg.
     {"instruction": "Turn left", "distance": 100.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4, "latitude": 37.7}},
   ]
   msg.timestamp = 123456789
 
-  serialized = msg.to_bytes()
-  with messenger.schema.MapboxSettings.from_bytes(serialized) as parsed:
-    assert parsed.navData.current.latitude == 37.7749
-    assert parsed.navData.current.longitude == -122.4194
-    assert parsed.navData.current.placeName == "San Francisco"
-    assert len(parsed.navData.route.steps) == 1
-    assert parsed.navData.route.steps[0].instruction == "Turn left"
-    assert parsed.timestamp == 123456789
+  pub.publish(msg)
+  received = poll_for_message(sub, "navigationd")
+
+  assert received.navData.current.latitude == 37.77493
+  assert received.navData.current.longitude == -122.41945
+  assert received.navData.current.placeName == "San Francisco"
+  assert len(received.navData.route.steps) == 1
+  assert received.navData.route.steps[0].instruction == "Turn left"
+  assert received.timestamp == 123456789
