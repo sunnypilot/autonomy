@@ -4,13 +4,21 @@ import logging
 import messaging.messenger as messenger
 
 
-def run():
-  logging.warning("navigationd init")
-  pub = messenger.PubMaster('navigationd')
-  period = 1.0 / pub.rate_hz
+class Navigationd:
+  def __init__(self):
+    self.pm = messenger.PubMaster('navigationd')
+    self.period = 1.0 / self.pm.rate_hz
 
-  while True:
-    msg = messenger.schema.MapboxSettings.new_message()
-    msg.timestamp = int(time.monotonic() * 1000)
-    pub.publish(msg)
-    time.sleep(period)
+  def run(self):
+    logging.warning("navigationd init")
+
+    while True:
+      msg = messenger.schema.MapboxSettings.new_message()
+      msg.timestamp = int(time.monotonic() * 1000)
+      self.pm.publish(msg)
+      time.sleep(self.period)
+
+
+def main():
+  nav = Navigationd()
+  nav.run()
