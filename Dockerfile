@@ -35,4 +35,4 @@ WORKDIR /__w/autonomy/autonomy
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN bash -c ". /opt/venv/bin/activate && uv sync --extra testing"
+RUN bash -c ". /opt/venv/bin/activate && uv sync --active --extra testing"
