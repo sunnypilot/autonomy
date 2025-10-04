@@ -84,6 +84,7 @@ services:
     pub2 = messenger.PubMaster("service2", registry_path=temp_path)
     sub1 = messenger.SubMaster("service1", registry_path=temp_path)
     sub2 = messenger.SubMaster("service2", registry_path=temp_path)
+    time.sleep(0.01)
 
     msg1 = messenger.schema.MapboxSettings.new_message()
     msg1.searchInput = 111
