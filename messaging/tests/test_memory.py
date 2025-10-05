@@ -1,8 +1,9 @@
-import time
 import os
 import psutil
-import tracemalloc
+import time
+
 import pytest
+import tracemalloc
 
 import messaging.messenger as messenger
 
@@ -14,7 +15,7 @@ def get_memory_stats(top=10):
 
 
 def analyze_memory_stats(stats_str):
-  """Analyze memory stats string and return key metrics."""
+  """Split memory stats string and return metrics."""
   allocations = []
 
   for line in stats_str.strip().split('\n'):
@@ -47,7 +48,7 @@ def test_memory_leak_submaster(capsys):
     pub = messenger.PubMaster("navigationd")
     sub = messenger.SubMaster("navigationd")
     time.sleep(.01)
-
+    # need to add a Sm call
     for i in range(9000):  # ~30 minutes at 0.2s intervals (5 Hz)
       msg = messenger.schema.MapboxSettings.new_message()
 
@@ -76,7 +77,7 @@ def test_memory_leak_submaster(capsys):
     memory_stats = get_memory_stats()
     print("Memory Stats:\n", memory_stats)
 
-    # flag if above 5 MB
+    # flag if above 5 MB, may be conservative
     assert memory_increase < 5, f"Potential leak: {memory_increase:.2f} MB increase"
 
     # Analyze memory allocations for potential leaks
