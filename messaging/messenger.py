@@ -55,7 +55,7 @@ class PubMaster:
   def __init__(self, service_names, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     if isinstance(service_names, str):
-      service_names: list = [service_names]
+      service_names = [service_names]
 
     self.context = zmq.Context()
     self.publishers = {}
