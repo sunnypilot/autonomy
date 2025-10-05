@@ -41,7 +41,7 @@ def analyze_memory_stats(stats_str):
 
 @pytest.mark.skipif(not os.getenv("RUN_MEMORY_TEST"), reason="not enabled, run export RUN_MEMORY_TEST=1")
 def test_memory_leak_submaster(capsys):
-  os.environ["ENABLE_MEMORY_PROFILING"] = "1"
+  tracemalloc.start()
   process = psutil.Process(os.getpid())
   initial_memory = process.memory_info().rss / 1024 / 1024  # bytes to MB
 
@@ -64,8 +64,8 @@ def test_memory_leak_submaster(capsys):
     memory_stats = get_memory_stats()
     print("Memory Stats:\n", memory_stats)
 
-    # flag if above 10 MB
-    assert memory_increase < 10, f"Potential leak: {memory_increase:.2f} MB increase"
+    # flag if above 5 MB
+    assert memory_increase < 5, f"Potential leak: {memory_increase:.2f} MB increase"
 
     # Analyze memory allocations for potential leaks
     stats_analysis = analyze_memory_stats(memory_stats)
@@ -87,3 +87,4 @@ def test_memory_leak_submaster(capsys):
 
   finally:
     sub.close()
+    tracemalloc.stop()

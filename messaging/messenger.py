@@ -1,24 +1,14 @@
-import os
 import threading
 import time
 import logging
 import asyncio
 from pathlib import Path
 from dataclasses import dataclass
-from memory_profiler import profile
-import tracemalloc
 
 import capnp
 import yaml
 import zmq
 import zmq.asyncio as zmq_async
-
-ENABLE_MEMORY_PROFILING = os.getenv("ENABLE_MEMORY_PROFILING")
-if ENABLE_MEMORY_PROFILING:
-    profile_decorator = profile
-else:
-  def profile_decorator(function):
-    return function
 
 schema = capnp.load("messaging/autonomy.capnp")
 
@@ -67,8 +57,6 @@ class PubMaster:
 class SubMaster:
   """Subscribes to multiple ZMQ publisher sockets and maintains latest messages."""
   def __init__(self, service_names=None, registry_path="messaging/services.yaml") -> None:
-    if ENABLE_MEMORY_PROFILING:
-      tracemalloc.start()
     self.registry: dict[str, dict] = load_registry(registry_path)
     if service_names is None:
       service_names = list(self.registry.keys())
@@ -106,7 +94,6 @@ class SubMaster:
     self._thread = threading.Thread(target=self._run_all_loops, daemon=True, name="SubMaster-all")
     self._thread.start()
 
-  @profile_decorator
   def _update_cached_msg(self, name, data=None):
     """Update the cached message for a service."""
     cached = self.services[name]["cached"]
@@ -119,7 +106,6 @@ class SubMaster:
       cached.msg = None
       cached.capnp_reader = None
 
-  @profile_decorator
   async def _async_loop(self, name):
     """Asynchronously receive messages for a service."""
     socket = self.services[name]["socket"]
