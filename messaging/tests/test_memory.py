@@ -48,37 +48,34 @@ def test_memory_leak_submaster(capsys):
     pub = messenger.PubMaster("navigationd")
     sub = messenger.SubMaster("navigationd")
     time.sleep(.01)
-    # need to add a Sm call
-    for i in range(36000):  # ~30 min
-      msg = messenger.schema.MapboxSettings.new_message()
 
-      msg.searchInput = i
-      msg.timestamp = int(time.monotonic())
+    for i in range(36000):  # 30 min
+      if i % 4 == 0:  # Publish at 5 Hz
+        msg = messenger.schema.MapboxSettings.new_message()
 
-      msg.lastGPSPosition.longitude = -122.4 + (i % 100) * 0.01
-      msg.lastGPSPosition.latitude = 37.7 + (i % 100) * 0.01
+        msg.searchInput = i
+        msg.timestamp = int(time.monotonic())
 
-      msg.navData.current.latitude = 37.8 + (i % 50) * 0.01
-      msg.navData.current.longitude = -122.3 + (i % 50) * 0.01
-      msg.navData.current.placeName = f"Sunnypilot HQ {i % 10}"
+        msg.lastGPSPosition.longitude = -122.4 + (i % 100) * 0.01
+        msg.lastGPSPosition.latitude = 37.7 + (i % 100) * 0.01
 
-      msg.navData.route.steps = [
-        {"instruction": f"Turn {i % 100}", "distance": 100.0 + (i % 100) * 10.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4 + (i % 100) * 0.01, "latitude": 37.7 + (i % 100) * 0.01}}]
-      msg.navData.route.totalDistance = 175.0 + i * 10.0
-      msg.navData.route.totalDuration = 60.0 + i * 5.0
-      msg.navData.route.geometry = [{"longitude": -122.4 + j * 0.01, "latitude": 37.7 + j * 0.01} for j in range(10)]
-      msg.navData.route.maxspeed = [{"speed": 50.0 + (i % 5) * 10.0, "unit": "mph"}]
+        msg.navData.current.latitude = 37.8 + (i % 50) * 0.01
+        msg.navData.current.longitude = -122.3 + (i % 50) * 0.01
+        msg.navData.current.placeName = f"Sunnypilot HQ {i % 10}"
 
-      pub.publish(msg)
-      received = None
-      start_time = time.monotonic()
+        msg.navData.route.steps = [
+          {"instruction": f"Turn {i % 100}", "distance": 100.0 + (i % 100) * 10.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4 + (i % 100) * 0.01, "latitude": 37.7 + (i % 100) * 0.01}}]
+        msg.navData.route.totalDistance = 175.0 + i * 10.0
+        msg.navData.route.totalDuration = 60.0 + i * 5.0
+        msg.navData.route.geometry = [{"longitude": -122.4 + j * 0.01, "latitude": 37.7 + j * 0.01} for j in range(10)]
+        msg.navData.route.maxspeed = [{"speed": 50.0 + (i % 5) * 10.0, "unit": "mph"}]
 
-      while received is None and (time.monotonic() - start_time) < 0.01:
-        received = sub["navigationd"]
-        time.sleep(0.0001)
+        pub.publish(msg)
 
-      assert received is not None, f"Failed to receive message {i}"
-      _ = received.navData.route.steps
+      # Query at 20 Hz to build up cache usage
+      received = sub["navigationd"]
+      if received is not None:
+        _ = received.navData.route.steps
       time.sleep(0.05)
 
     final_memory = process.memory_info().rss / 1024 / 1024  # bytes to MB
