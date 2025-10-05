@@ -8,7 +8,7 @@ from system.manager import main as manager_main
 def test_manager_submaster_integration():
   manager = multiprocessing.Process(target=manager_main)
   manager.start()
-  time.sleep(.1)
+  time.sleep(0.1)
 
   assert manager.is_alive(), "Manager is not alive"
 
