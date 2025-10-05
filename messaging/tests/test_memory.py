@@ -48,13 +48,16 @@ def test_memory_leak_submaster(capsys):
     pub = messenger.PubMaster("navigationd")
     sub = messenger.SubMaster("navigationd")
     time.sleep(.01)
+    latencies = []
+    prev_timestamp = 0.0
 
     for i in range(36000):  # 30 min
       if i % 4 == 0:  # Publish at 5 Hz
+        publish_time = time.perf_counter()
         msg = messenger.schema.MapboxSettings.new_message()
 
         msg.searchInput = i
-        msg.timestamp = int(time.monotonic())
+        msg.timestamp = int(publish_time * 1000000)  # microseconds
 
         msg.lastGPSPosition.longitude = -122.4 + (i % 100) * 0.01
         msg.lastGPSPosition.latitude = 37.7 + (i % 100) * 0.01
@@ -72,21 +75,29 @@ def test_memory_leak_submaster(capsys):
 
         pub.publish(msg)
 
-      # Query at 20 Hz to build up cache usage
+      # Query at 20 Hz to build up cache
       received = sub["navigationd"]
       if received is not None:
         _ = received.navData.route.steps
+        if received.timestamp > prev_timestamp:
+          latency = time.perf_counter() - (received.timestamp / 1000000)
+          latencies.append(latency)
+          prev_timestamp = received.timestamp
       time.sleep(0.05)
 
     final_memory = process.memory_info().rss / 1024 / 1024  # bytes to MB
     memory_increase = final_memory - initial_memory
     memory_stats = get_memory_stats()
     print("Memory Stats:\n", memory_stats)
+    if latencies:
+      avg_latency = sum(latencies) / len(latencies)
+      print(f"Average latency: {avg_latency:.6f}s")
+      assert avg_latency < 0.05, f"Average latency {avg_latency:.6f}s exceeds 50ms"
 
     # flag if above 5 MB, may be conservative
     assert memory_increase < 5, f"Potential leak: {memory_increase:.2f} MB increase"
 
-    # Analyze memory allocations for potential leaks
+    # check memory allocations for potential leaks
     stats_analysis = analyze_memory_stats(memory_stats)
     assert stats_analysis['total_allocations'] > 0, "No memory allocations found"
 
