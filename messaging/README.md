@@ -23,7 +23,7 @@ class Navigation:
 
   def update_location(self):
     nav = self.sm['navigationd']
-    if nav:  # messenger will return None if the message times out
+    if nav:  # messenger will return None if message times out
       self.latitude = nav.navData.current.latitude
       self.longitude = nav.navData.current.longitude
 
