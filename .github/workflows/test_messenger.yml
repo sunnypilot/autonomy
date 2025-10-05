@@ -5,7 +5,7 @@ on:
     branches: [master]
   workflow_dispatch:
   schedule:
-    - cron: '8 0 * * *'  # midnight PST
+    - cron: '0 8 * * *'  # midnight PST
 
 jobs:
   memory-test:
