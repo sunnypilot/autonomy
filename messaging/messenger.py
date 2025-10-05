@@ -54,6 +54,15 @@ class PubMaster:
     serialized = msg.to_bytes()
     self.socket.send(serialized)
 
+  def close(self):
+    if hasattr(self, 'socket'):
+      self.socket.close()
+    if hasattr(self, 'context'):
+      self.context.term()
+
+  def __del__(self):
+    self.close()
+
 
 class SubMaster:
   """Subscribes to multiple ZMQ publisher sockets and maintains latest messages."""
