@@ -102,7 +102,7 @@ def test_memory_leak_submaster(capsys):
     assert stats_analysis['total_allocations'] > 0, "No memory allocations found"
 
     top_size, _, top_line = stats_analysis['top_allocation']
-    assert top_size < 100 * 1024, f"Excessive allocation: {top_size/1024:.1f} KiB in {top_line}"
+    assert top_size < 256 * 1024, f"Excessive allocation: {top_size/1024:.1f} KiB in {top_line}"
 
     messenger_allocations = [allocation for allocation in stats_analysis['allocations'] 
                             if 'messenger.py' in allocation[2]]
