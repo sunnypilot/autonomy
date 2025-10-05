@@ -2,7 +2,7 @@ name: Messenger Regression Test
 
 on:
   push:
-    branches: [master, memory-regression-test]
+    branches: [master]
   workflow_dispatch:
   schedule:
     - cron: '0 8 * * *'  # midnight PST
