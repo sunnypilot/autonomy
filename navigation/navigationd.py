@@ -7,7 +7,7 @@ import messaging.messenger as messenger
 class Navigationd:
   def __init__(self):
     self.pm = messenger.PubMaster('navigationd')
-    self.rate = 1.0 / self.pm.rate_hz
+    self.rate = 1.0 / self.pm['navigationd'].rate_hz
 
   def run(self):
     logging.warning("navigationd init")
@@ -15,7 +15,7 @@ class Navigationd:
     while True:
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)
-      self.pm.publish(msg)
+      self.pm.send('navigationd', msg)
       time.sleep(self.rate)
 
 
