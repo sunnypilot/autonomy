@@ -112,7 +112,7 @@ class SubMaster:
     socket = self.services[name]["socket"]
     while self._running:
       try:
-        data = await asyncio.wait_for(socket.recv(), timeout=0.01)
+        data = await asyncio.wait_for(socket.recv(), timeout=0.1)
         with self._lock:
           self.services[name]["last_data"] = data
           self.services[name]["received_at"] = time.monotonic()
