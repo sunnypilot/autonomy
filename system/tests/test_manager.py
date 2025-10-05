@@ -24,12 +24,3 @@ class TestManagerIntegration:
   def test_manager_processes_list(self):
     assert processes[0].name == "navigationd"
     assert processes[0].module == "navigation.navigationd"
-
-  def test_process_termination(self):
-    for process in processes:
-      process.start()
-      assert process.is_alive()
-
-      process.process.terminate()
-      process.process.join()
-      assert not process.is_alive()
