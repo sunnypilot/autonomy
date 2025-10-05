@@ -49,7 +49,7 @@ def test_memory_leak_submaster(capsys):
     sub = messenger.SubMaster("navigationd")
     time.sleep(.01)
     # need to add a Sm call
-    for i in range(9000):  # ~30 minutes at 0.2s intervals (5 Hz)
+    for i in range(36000):  # ~30 min
       msg = messenger.schema.MapboxSettings.new_message()
 
       msg.searchInput = i
@@ -70,7 +70,16 @@ def test_memory_leak_submaster(capsys):
       msg.navData.route.maxspeed = [{"speed": 50.0 + (i % 5) * 10.0, "unit": "mph"}]
 
       pub.publish(msg)
-      time.sleep(0.2)
+      received = None
+      start_time = time.monotonic()
+
+      while received is None and (time.monotonic() - start_time) < 0.01:
+        received = sub["navigationd"]
+        time.sleep(0.0001)
+
+      assert received is not None, f"Failed to receive message {i}"
+      _ = received.navData.route.steps
+      time.sleep(0.05)
 
     final_memory = process.memory_info().rss / 1024 / 1024  # bytes to MB
     memory_increase = final_memory - initial_memory
