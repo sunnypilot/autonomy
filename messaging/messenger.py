@@ -10,6 +10,7 @@ import yaml
 import zmq
 import zmq.asyncio as zmq_async
 
+
 schema = capnp.load("messaging/autonomy.capnp")
 
 
