@@ -1,6 +1,8 @@
 import time
 import multiprocessing
 import importlib
+import signal
+import sys
 
 multiprocessing.set_start_method('spawn', force=True)
 
@@ -29,9 +31,19 @@ processes = [
 ]
 
 
+def signal_handler(signum, frame):
+  for process in processes:
+    if process.process and process.process.is_alive():
+      process.process.terminate()
+      process.process.join(timeout=1.0)
+  sys.exit(0)
+
+
 def main():
   for process in processes:
     process.start()
+
+  signal.signal(signal.SIGTERM, signal_handler)
 
   while True:
     alive = [process.name for process in processes if process.is_alive()]
