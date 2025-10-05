@@ -24,6 +24,7 @@ class TestMessenger:
 
   def test_sub_and_pub_master_init(self):
     pub = messenger.PubMaster("navigationd")
+    self.instances.append(pub)
     assert pub['navigationd'].rate_hz == 5
 
     sub = messenger.SubMaster("navigationd")
@@ -51,6 +52,7 @@ class TestMessenger:
 
   def test_pub_sub_integration(self):
     pub = messenger.PubMaster("navigationd")
+    self.instances.append(pub)
     sub = messenger.SubMaster("navigationd")
     self.instances.append(sub)
     time.sleep(0.01)
@@ -82,6 +84,7 @@ services:
     # Send a message from two services and verify receipt
     try:
       pub = messenger.PubMaster(["service1", "service2"], registry_path=temp_path)
+      self.instances.append(pub)
       sub = messenger.SubMaster(["service1", "service2"], registry_path=temp_path)
       self.instances.append(sub)
       time.sleep(0.01)
@@ -107,6 +110,7 @@ services:
 
   def test_alive_property(self):
     pub = messenger.PubMaster("navigationd")
+    self.instances.append(pub)
     sub = messenger.SubMaster("navigationd")
     self.instances.append(sub)
     time.sleep(0.01)
@@ -128,6 +132,7 @@ services:
 
   def test_nested_message_structure(self):
     pub = messenger.PubMaster("navigationd")
+    self.instances.append(pub)
     sub = messenger.SubMaster("navigationd")
     self.instances.append(sub)
     time.sleep(0.01)
