@@ -89,12 +89,13 @@ def test_memory_leak_submaster(capsys):
     memory_increase = final_memory - initial_memory
     memory_stats = get_memory_stats()
     print("Memory Stats:\n", memory_stats)
+
     if latencies:
       avg_latency = sum(latencies) / len(latencies)
       print(f"Average latency: {avg_latency:.6f}s")
       assert avg_latency < 0.05, f"Average latency {avg_latency:.6f}s exceeds 50ms"
 
-    # flag if above 5 MB, may be conservative
+    # flag if above 5 MB, may be a bit too conservative
     assert memory_increase < 5, f"Potential leak: {memory_increase:.2f} MB increase"
 
     # check memory allocations for potential leaks
