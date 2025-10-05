@@ -37,6 +37,7 @@ testing = [
     "mutmut",
     "jq",
     "scons",
+    "psutil>=7.1.0",
 ]
 dev = [
     "einops>=0.8.0",

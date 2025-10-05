@@ -1,0 +1,28 @@
+name: Messenger Regression Test
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * *'  # midnight PST
+
+jobs:
+  memory-test:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/sunnypilot/autonomy:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        lfs: true
+        fetch-depth: 1
+
+    - name: Run memory leak test
+      env:
+        RUN_MEMORY_TEST: 1
+      run: pytest messaging/tests/test_memory.py -v -s
