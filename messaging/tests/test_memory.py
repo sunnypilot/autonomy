@@ -73,7 +73,7 @@ def test_memory_leak_submaster(capsys):
         msg.navData.route.geometry = [{"longitude": -122.4 + j * 0.01, "latitude": 37.7 + j * 0.01} for j in range(10)]
         msg.navData.route.maxspeed = [{"speed": 50.0 + (i % 5) * 10.0, "unit": "mph"}]
 
-        pub.publish(msg)
+        pub.send("navigationd", msg)
 
       # Query at 20 Hz to build up cache
       received = sub["navigationd"]

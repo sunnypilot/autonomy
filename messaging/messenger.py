@@ -20,6 +20,16 @@ class CachedMessage:
   capnp_reader: object = None
 
 
+@dataclass
+class Publisher:
+  socket: zmq.Socket
+  rate_hz: float
+
+  def publish(self, msg) -> None:
+    serialized = msg.to_bytes()
+    self.socket.send(serialized)
+
+
 def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
   with Path(path).open() as file:
     config = yaml.safe_load(file)
@@ -42,17 +52,33 @@ def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
 
 class PubMaster:
   """Publishes messages to ZMQ publisher socket."""
-  def __init__(self, name, registry_path="messaging/services.yaml") -> None:
+  def __init__(self, service_names, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
-    self.rate_hz: float = self.registry[name]["rate_hz"]  # Used by clients to determine publish rate (1.0/rate_hz)
+    if isinstance(service_names, str):
+      service_names: list = [service_names]
 
     self.context = zmq.Context()
-    self.socket = self.context.socket(zmq.PUB)
-    self.socket.bind(f"ipc:///tmp/{name}.ipc")
+    self.publishers = {}
+    for name in service_names:
+      if name not in self.registry:
+        raise KeyError(f"Unknown service {name}")
+      socket = self.context.socket(zmq.PUB)
+      socket.bind(f"ipc:///tmp/{name}.ipc")
+      self.publishers[name] = Publisher(socket, self.registry[name]["rate_hz"])
 
-  def publish(self, msg) -> None:
-    serialized = msg.to_bytes()
-    self.socket.send(serialized)
+  def __getitem__(self, name):
+    return self.publishers[name]
+
+  def send(self, name, msg):
+    self.publishers[name].publish(msg)
+
+  def close(self):
+    for publisher in self.publishers.values():
+      publisher.socket.close()
+    self.context.term()
+
+  def __del__(self):
+    self.close()
 
 
 class SubMaster:
