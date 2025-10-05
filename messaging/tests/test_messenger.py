@@ -107,6 +107,7 @@ services:
 def test_alive_property():
   pub = messenger.PubMaster("navigationd")
   sub = messenger.SubMaster("navigationd")
+  time.sleep(0.01)
   assert not sub.alive["navigationd"]  # No messages yet
 
   msg = messenger.schema.MapboxSettings.new_message()
