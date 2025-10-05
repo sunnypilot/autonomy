@@ -20,8 +20,6 @@ def analyze_memory_stats(stats_str):
   for line in stats_str.strip().split('\n'):
     if 'size=' not in line or 'count=' not in line:
       continue
-    if 'memory_profiler' in line:
-      continue
 
     try:
       # Parse: size=x KiB, count=x, average=x B
@@ -52,10 +50,24 @@ def test_memory_leak_submaster(capsys):
 
     for i in range(9000):  # ~30 minutes at 0.2s intervals (5 Hz)
       msg = messenger.schema.MapboxSettings.new_message()
-      msg.navData.route.steps = [
-        {"instruction": f"Turn {i % 100}", "distance": 100.0 + (i % 100) * 10.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4 + (i % 100) * 0.01, "latitude": 37.7}}]
+
       msg.searchInput = i
-      msg.timestamp = int(time.time())
+      msg.timestamp = int(time.monotonic())
+
+      msg.lastGPSPosition.longitude = -122.4 + (i % 100) * 0.01
+      msg.lastGPSPosition.latitude = 37.7 + (i % 100) * 0.01
+
+      msg.navData.current.latitude = 37.8 + (i % 50) * 0.01
+      msg.navData.current.longitude = -122.3 + (i % 50) * 0.01
+      msg.navData.current.placeName = f"Sunnypilot HQ {i % 10}"
+
+      msg.navData.route.steps = [
+        {"instruction": f"Turn {i % 100}", "distance": 100.0 + (i % 100) * 10.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4 + (i % 100) * 0.01, "latitude": 37.7 + (i % 100) * 0.01}}]
+      msg.navData.route.totalDistance = 175.0 + i * 10.0
+      msg.navData.route.totalDuration = 60.0 + i * 5.0
+      msg.navData.route.geometry = [{"longitude": -122.4 + j * 0.01, "latitude": 37.7 + j * 0.01} for j in range(10)]
+      msg.navData.route.maxspeed = [{"speed": 50.0 + (i % 5) * 10.0, "unit": "mph"}]
+
       pub.publish(msg)
       time.sleep(0.2)
 
