@@ -1,6 +1,3 @@
-import os
-import shutil
-import tempfile
 import time
 import multiprocessing
 
@@ -8,17 +5,6 @@ import messaging.messenger as messenger
 from system.manager import main as manager_main
 
 class TestManagerSubmaster:
-  def setup_method(self):
-    self.temp_home = None
-    if os.environ.get('CI') == 'true':
-      self.temp_home = tempfile.mkdtemp()
-      os.environ['HOME'] = self.temp_home
-      os.makedirs(os.path.join(self.temp_home, '.sunnypilot', 'params'), exist_ok=True)
-
-  def teardown_method(self):
-    if self.temp_home:
-      shutil.rmtree(self.temp_home)
-
   def test_manager_submaster_integration(self):
     manager = multiprocessing.Process(target=manager_main)
     manager.start()

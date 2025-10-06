@@ -42,11 +42,30 @@ bool create_params_path(const std::string &params_path) {
 }
 
 std::string ensure_params_path(const std::string &path = {}) {
-  std::string params_path = path.empty() ? std::string(getenv("HOME")) + "/.sunnypilot/params" : path;
-  if (!create_params_path(params_path)) {
+  if (!path.empty()) {
+    if (!create_params_path(path)) {
+      throw std::runtime_error("Failed to ensure params path");
+    }
+    return path;
+  }
+
+  // Try default path
+  const char* home = getenv("HOME");
+  std::string default_path = std::string(home ? home : "/tmp") + "/.sunnypilot/params";
+  if (create_params_path(default_path)) {
+    return default_path;
+  }
+
+  // Fallback to temp directory for CI if HOME not accessible
+  char temp_dir[] = "/tmp/params_XXXXXX";
+  if (mkdtemp(temp_dir) == nullptr) {
+    throw std::runtime_error("Failed to create temp dir for params");
+  }
+  std::string temp_path = std::string(temp_dir) + "/.sunnypilot/params";
+  if (!create_params_path(temp_path)) {
     throw std::runtime_error("Failed to ensure params path");
   }
-  return params_path;
+  return temp_path;
 }
 
 class FileLock {
