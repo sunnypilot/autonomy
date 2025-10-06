@@ -1,3 +1,8 @@
+import os
+import shutil
+import tempfile
+
+
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
 from messaging.messenger import schema
@@ -5,9 +10,18 @@ from messaging.messenger import schema
 
 class TestMapbox:
   def setup_method(self):
+    self.temp_home = None
+    if os.environ.get('CI') == 'true':
+      self.temp_home = tempfile.mkdtemp()
+      os.environ['HOME'] = self.temp_home
+      os.makedirs(os.path.join(self.temp_home, '.sunnypilot', 'params'), exist_ok=True)
     self.params_capnp = schema
     self.mapbox = MapboxIntegration()
     self.nav = NavigationInstructions()
+
+  def teardown_method(self):
+    if self.temp_home:
+      shutil.rmtree(self.temp_home)
 
   def _setup_route(self):
     settings = self.params_capnp.MapboxSettings.new_message()
