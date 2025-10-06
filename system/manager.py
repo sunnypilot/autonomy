@@ -28,6 +28,7 @@ class PythonProcess:
 
 processes = [
   PythonProcess("navigationd", "navigation.navigationd"),
+  PythonProcess("livelocationd", "navigation.debug.livelocationd"),
 ]
 
 
