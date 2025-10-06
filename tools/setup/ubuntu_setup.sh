@@ -17,7 +17,7 @@ echo "[ ] finished apt install t=$SECONDS"
 
 
 # install python dependencies
-uv pip install -e .[testing]
+uv sync --extra testing
 echo "[ ] installed python dependencies t=$SECONDS"
 
 echo
