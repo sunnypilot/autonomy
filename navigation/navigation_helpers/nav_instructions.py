@@ -1,12 +1,13 @@
 from navigation.common.params.params import Params
 from navigation.navd.helpers import Coordinate, string_to_direction
-from navigation.common.capnp import navigation
+from messaging.messenger import schema
+
 
 
 class NavigationInstructions:
   def __init__(self):
     self.params = Params()
-    self.params_capnp = navigation
+    self.params_capnp = schema
     self.coord = Coordinate(0, 0)
 
   def get_upcoming_turn(self, current_lat, current_lon) -> str:

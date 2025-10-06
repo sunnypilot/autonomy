@@ -3,13 +3,13 @@ from urllib.parse import quote
 import requests
 from navigation.common.params.params import Params
 from navigation.navd.helpers import Coordinate, string_to_direction
-from navigation.common.capnp import navigation
+from messaging.messenger import schema
 
 
 class MapboxIntegration:
   def __init__(self):
     self.params = Params()
-    self.params_capnp = navigation
+    self.params_capnp = schema
 
   def _load_mapbox_settings(self):
     param_value = self.params.get("MapboxSettings", encoding='bytes')
