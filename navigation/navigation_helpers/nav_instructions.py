@@ -3,7 +3,6 @@ from navigation.navd.helpers import Coordinate, string_to_direction
 from messaging.messenger import schema
 
 
-
 class NavigationInstructions:
   def __init__(self):
     self.params = Params()
