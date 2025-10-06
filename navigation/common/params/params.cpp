@@ -34,7 +34,6 @@ int fsync_dir(const std::string &path) {
 }
 
 bool create_params_path(const std::string &params_path) {
-  // Make sure params path exists, create parent directories if needed
   size_t pos = 0;
   std::string current = "";
   while ((pos = params_path.find('/', pos + 1)) != std::string::npos) {
