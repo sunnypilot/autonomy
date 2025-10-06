@@ -59,9 +59,6 @@ def test_memory_leak_submaster(capsys):
         msg.searchInput = i
         msg.timestamp = int(publish_time * 1000000)  # microseconds
 
-        msg.lastGPSPosition.longitude = -122.4 + (i % 100) * 0.01
-        msg.lastGPSPosition.latitude = 37.7 + (i % 100) * 0.01
-
         msg.navData.current.latitude = 37.8 + (i % 50) * 0.01
         msg.navData.current.longitude = -122.3 + (i % 50) * 0.01
         msg.navData.current.placeName = f"Sunnypilot HQ {i % 10}"
