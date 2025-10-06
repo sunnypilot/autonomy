@@ -85,7 +85,7 @@ class MapboxIntegration:
       settings.navData.current.latitude = latitude
       settings.navData.current.longitude = longitude
       settings.navData.current.placeName = name
-      # Generate route from current GPS to destination
+      # Generate route from GPS to destination
       token = self.get_public_token()
       route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)
       if route_data:
