@@ -10,9 +10,7 @@ class TestMapbox:
     self.nav = NavigationInstructions()
 
   def _setup_route(self):
-    settings = self.params_capnp.MapboxSettings.new_message()
-    settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
-    settings.searchInput = 0
+    settings = self.mapbox._load_mapbox_settings()
     self.mapbox.params.put("MapboxSettings", settings.to_bytes())
 
     # setup GPS position
