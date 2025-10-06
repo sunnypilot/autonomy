@@ -46,7 +46,7 @@ struct MapboxSettings @0x8d30477844c72468 {
 }
 
 struct LiveLocationKalman @0xe98c100195e6f0c0 {
-  # Taken directly from sunnypilot/openpilot for use here.
+  # These are the exact schemas that will be used on comma 3x device for livelocationkalman.
   positionECEF @0 : Measurement;
   positionGeodetic @1 : Measurement;
   velocityECEF @2 : Measurement;

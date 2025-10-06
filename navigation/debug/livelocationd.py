@@ -5,10 +5,15 @@ import messaging.messenger as messenger
 
 
 class Livelocationd:
+  ''' Debug daemon to simulate live GPS updates.'''
   def __init__(self):
     self.pm = messenger.PubMaster('livelocationd')
+
+    # Initial coordinates set along a route navigating to a random house in CA that google picked: 580 Winchester Dr, Oxnard, CA. 
     self.lat = 34.2299
     self.lon = -119.1733
+    
+    # Increment values by tenthousandths to create movement along route.
     self.lat_increment = 0.0001
     self.lon_increment = -0.0001
 
@@ -16,6 +21,7 @@ class Livelocationd:
     logging.warning("livelocationd init")
 
     while True:
+      # Send the same message that openpilot/sunnypilot expects to receive from livelocationkalman. That way, it'll be a simple swap in for on device use.
       msg = messenger.schema.LiveLocationKalman.new_message()
       msg.positionGeodetic.value = [self.lat, self.lon]
       msg.positionGeodetic.std = [0.0, 0.0]
