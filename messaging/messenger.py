@@ -64,7 +64,7 @@ class PubMaster:
         raise KeyError(f"Unknown service {name}")
       socket = self.context.socket(zmq.PUB)
       socket.bind(f"ipc:///tmp/{name}.ipc")
-      self.publishers[name] = Publisher(socket, self.registry[name]["rate_hz"])
+      self.publishers[name] = Publisher(socket, (1.0 / self.registry[name]["rate_hz"]))
 
   def __getitem__(self, name):
     return self.publishers[name]

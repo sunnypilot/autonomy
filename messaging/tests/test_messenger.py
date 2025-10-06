@@ -25,7 +25,7 @@ class TestMessenger:
   def test_sub_and_pub_master_init(self):
     pub = messenger.PubMaster("navigationd")
     self.instances.append(pub)
-    assert pub['navigationd'].rate_hz == 5
+    assert pub['navigationd'].rate_hz == 0.2
 
     sub = messenger.SubMaster("navigationd")
     self.instances.append(sub)

@@ -32,5 +32,5 @@ class Navigation:
     msg.navData.current.latitude = latitude
     msg.navData.current.longitude = longitude
     msg.timestamp = 123456
-    self.pm.publish(msg)
+    self.pm.send('navigationd', msg)
 ```
