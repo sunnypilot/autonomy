@@ -12,14 +12,9 @@ class MapboxIntegration:
     self.params_capnp = schema
 
   def _load_mapbox_settings(self):
-    param_value = self.params.get("MapboxSettings", encoding='bytes')
     settings = self.params_capnp.MapboxSettings.new_message()
-    if param_value:
-      with self.params_capnp.MapboxSettings.from_bytes(param_value) as existing:
-        settings.navData = existing.navData
-    else:
-      settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
-      settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
+    settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
+    settings.navData.route = self.params_capnp.MapboxSettings.Route.new_message()
     return settings
   
   def get_public_token(self):

@@ -9,6 +9,8 @@ class NavigationInstructions:
     self.params = Params()
     self.params_capnp = schema
     self.coord = Coordinate(0, 0)
+    self._cached_route = None
+    self._route_loaded = False
 
   def get_upcoming_turn(self, current_lat, current_lon) -> str:
     route = self.get_current_route()
@@ -20,7 +22,7 @@ class NavigationInstructions:
       turn_dir = str(step.get('turn_direction'))
       if turn_dir and turn_dir != 'none':
         distance = self.coord.distance_to(step['location'])
-        if distance <= 100:  # Within 100 meters
+        if distance <= 40:  # within 131 feet
           return turn_dir
     return 'none'
 
@@ -73,6 +75,9 @@ class NavigationInstructions:
     }
 
   def get_current_route(self):
+    if self._route_loaded and self._cached_route is not None:
+      return self._cached_route
+
     param_value = self.params.get("MapboxSettings", encoding='bytes')
     if not param_value:
       return None
@@ -100,7 +105,7 @@ class NavigationInstructions:
           'turn_direction': string_to_direction(step.instruction),
           'cumulative_distance': cumulative_distance
         })
-      return {
+      self._cached_route = {
         'steps': steps,
         'total_distance': route.totalDistance,
         'total_duration': route.totalDuration,
@@ -108,3 +113,9 @@ class NavigationInstructions:
         'cumulative_distances': cumulative_distances,
         'maxspeed': maxspeed
       }
+      self._route_loaded = True
+      return self._cached_route
+
+  def clear_route_cache(self):
+    self._cached_route = None
+    self._route_loaded = False

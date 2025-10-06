@@ -2,3 +2,7 @@ services:
   - name: navigationd
     rate_hz: 5
     schema: MapboxSettings
+
+  - name: livelocationd
+    rate_hz: 20
+    schema: LiveLocationKalman

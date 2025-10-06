@@ -5,7 +5,7 @@ struct MapboxSettings @0x8d30477844c72468 {
   searchInput @0 :Int32;
   navData @1 :NavData;
   timestamp @2 :UInt64;
-  lastGPSPosition @3 :GPSPosition;
+  upcomingTurn @3 :Text;
 
   struct GPSPosition {
     longitude @0 :Float64;
@@ -42,5 +42,18 @@ struct MapboxSettings @0x8d30477844c72468 {
   struct NavData {
     current @0 :Destination;
     route @1 :Route;
+  }
+}
+
+struct LiveLocationKalman @0xe98c100195e6f0c0 {
+  # Taken directly from sunnypilot/openpilot for use here.
+  positionECEF @0 : Measurement;
+  positionGeodetic @1 : Measurement;
+  velocityECEF @2 : Measurement;
+
+  struct Measurement {
+    value @0 : List(Float64);
+    std @1 : List(Float64);
+    valid @2 : Bool;
   }
 }
