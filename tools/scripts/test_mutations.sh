@@ -52,11 +52,11 @@ EOF
     echo "Starting mutation testing on changed files:"
     echo "$changed_files"
     check_if_tests_exist
-    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 4
+    MUTMUT_CONFIG_FILE=pyproject.mutmut.toml timeout 1800 mutmut run --max-children 1
 else
     echo "Starting full mutation testing with mutmut"
     check_if_tests_exist
-    timeout 3600 mutmut run --max-children 4
+    timeout 3600 mutmut run --max-children 1
 fi
 
 echo "Mutation testing done"

@@ -13,14 +13,13 @@ class TestMapbox:
     settings = self.mapbox._load_mapbox_settings()
     self.mapbox.params.put("MapboxSettings", settings.to_bytes())
 
-    # setup GPS position
+    # setup route
     current_lon, current_lat = -119.17557, 34.23305
     user_input_location = "740 E Ventura Blvd. Camarillo, CA"
     postvars = {
       "place_name": user_input_location
     }
 
-    # set destination and fetch route
     postvars, valid_addr = self.mapbox.set_destination(postvars, False, current_lon, current_lat)
     assert valid_addr, "Failed to geocode the location."
     route = self.nav.get_current_route()
@@ -30,14 +29,12 @@ class TestMapbox:
     return route, current_lat, current_lon, postvars
 
   def test_set_destination(self):
-    _, _, _, postvars = self._setup_route()
-    print(f"Destination set: {postvars}")
     stored = self.mapbox.params.get('MapboxSettings', encoding='bytes')
     assert stored is not None, "MapboxSettings not stored"
     with self.params_capnp.MapboxSettings.from_bytes(stored) as settings:
       dest_lat = settings.navData.current.latitude
       dest_lon = settings.navData.current.longitude
-      print(f"Stored Destination: latitude: {dest_lat:.10f}, longitude: {dest_lon:.10f}, Address Name: {settings.navData.current.placeName}")
+      assert dest_lat != 0.0 and dest_lon != 0.0, "Coordinates not set"
 
   def test_get_route(self):
     route, _, _, _ = self._setup_route()
@@ -51,16 +48,11 @@ class TestMapbox:
     assert len(route['geometry']) > 0, "Route should have geometry coordinates"
     assert len(route['maxspeed']) > 0, "Route should have maxspeed data"
 
-    maxspeed_kph = [(speed, 'km/h') for speed, unit in route['maxspeed'] if speed > 0]
+    maxspeed_kph = [(speed, unit) for speed, unit in route['maxspeed'] if speed > 0]
     print(f"Maxspeed: {maxspeed_kph}")
     if route and 'steps' in route:
-      print("Route steps turn_directions:", [step['turn_direction'] for step in route['steps']])
-
-      # Assert all steps have turn_direction field
       for step in route['steps']:
         assert 'turn_direction' in step, "Each step should have turn_direction"
-
-      print(f"Route generated: {len(route['steps'])} steps, total distance: {route['total_distance']:.3f}m")
 
   def test_upcoming_turn_detection(self):
     route, current_lat, current_lon, _ = self._setup_route()
