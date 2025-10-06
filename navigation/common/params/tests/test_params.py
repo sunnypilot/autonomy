@@ -1,4 +1,6 @@
 import os
+import shutil
+import tempfile
 import time
 
 from navigation.common.params.params import Params
@@ -6,14 +8,23 @@ from navigation.common.params.params import Params
 
 class TestParams:
   def setup_method(self):
-    self.params = Params()
+    if os.environ.get('CI') == 'true':
+      self.temp_dir = tempfile.mkdtemp()
+      self.params = Params(self.temp_dir)
+    else:
+      self.params = Params()
+      self.temp_dir = None
 
   def teardown_method(self):
-    test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key", "large_key"]
-    for key in test_keys:
-      file_path = os.path.join(self.params.params_dir, key)
-      if os.path.exists(file_path):
-        os.remove(file_path)
+    # Clean up test params
+    if self.temp_dir:
+      shutil.rmtree(self.temp_dir)
+    else:
+      test_keys = ["key", "other_key", "int_key", "list_key", "bool_key", "float_key", "json_key", "bytes_key", "large_key"]
+      for key in test_keys:
+        file_path = os.path.join(self.params.params_dir, key)
+        if os.path.exists(file_path):
+          os.remove(file_path)
 
   def test_get_existing_key(self):
     self.params.put("key", "value")

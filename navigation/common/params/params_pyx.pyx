@@ -3,7 +3,6 @@
 import os
 import base64
 import json
-import tempfile
 from libcpp.string cimport string
 from libcpp cimport bool as cpp_bool
 
@@ -33,11 +32,6 @@ cdef class Params:
   cdef CParams* c_params
 
   def __cinit__(self, path=""):
-    if path == "" and os.environ.get('CI') == 'true':
-      temp_home = tempfile.mkdtemp()
-      params_path = os.path.join(temp_home, '.sunnypilot', 'params')
-      os.makedirs(params_path, exist_ok=True)
-      path = params_path
     self.c_params = new CParams(path.encode('utf-8'))
 
   def __dealloc__(self):
