@@ -4,7 +4,7 @@ import tempfile
 
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
-from navigation.common.capnp import navigation
+from messaging.messenger import schema
 
 
 class TestMapbox:
@@ -14,7 +14,7 @@ class TestMapbox:
       self.temp_home = tempfile.mkdtemp()
       os.environ['HOME'] = self.temp_home
       os.makedirs(os.path.join(self.temp_home, '.sunnypilot', 'params'), exist_ok=True)
-    self.params_capnp = navigation
+    self.params_capnp = schema
     self.mapbox = MapboxIntegration()
     self.nav = NavigationInstructions()
 
