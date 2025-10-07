@@ -10,9 +10,7 @@ class TestMapbox:
     self.nav = NavigationInstructions()
 
   def _setup_route(self):
-    settings = self.params_capnp.MapboxSettings.new_message()
-    settings.navData = self.params_capnp.MapboxSettings.NavData.new_message()
-    settings.searchInput = 0
+    settings = self.mapbox._load_mapbox_settings()
     self.mapbox.params.put("MapboxSettings", settings.to_bytes())
 
     # setup route
@@ -31,12 +29,14 @@ class TestMapbox:
     return route, current_lat, current_lon, postvars
 
   def test_set_destination(self):
+    _, _, _, postvars = self._setup_route()
+
     stored = self.mapbox.params.get('MapboxSettings', encoding='bytes')
     assert stored is not None, "MapboxSettings not stored"
     with self.params_capnp.MapboxSettings.from_bytes(stored) as settings:
       dest_lat = settings.navData.current.latitude
       dest_lon = settings.navData.current.longitude
-      assert dest_lat != 0.0 and dest_lon != 0.0, "Coordinates not set"
+      assert dest_lat == postvars["latitude"] and dest_lon == postvars["longitude"], "Destination coordinates not stored correctly"
 
   def test_get_route(self):
     route, _, _, _ = self._setup_route()

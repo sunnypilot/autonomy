@@ -2,10 +2,9 @@
 
 
 struct MapboxSettings @0x8d30477844c72468 {
-  searchInput @0 :Int32;
-  navData @1 :NavData;
-  timestamp @2 :UInt64;
-  upcomingTurn @3 :Text;
+  navData @0 :NavData;
+  timestamp @1 :UInt64;
+  upcomingTurn @2 :Text;
 
   struct GPSPosition {
     longitude @0 :Float64;
