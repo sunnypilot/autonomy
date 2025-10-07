@@ -56,7 +56,6 @@ def test_memory_leak_submaster(capsys):
         publish_time = time.perf_counter()
         msg = messenger.schema.MapboxSettings.new_message()
 
-        msg.searchInput = i
         msg.timestamp = int(publish_time * 1000000)  # microseconds
 
         msg.navData.current.latitude = 37.8 + (i % 50) * 0.01

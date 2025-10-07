@@ -40,14 +40,14 @@ class TestMessenger:
 
   def test_message_serialization(self):
     msg = messenger.schema.MapboxSettings.new_message()
-    msg.searchInput = 42
+    msg.upcomingTurn = 'none'
     msg.timestamp = 123456
 
     serialized = msg.to_bytes()
     assert isinstance(serialized, bytes)
 
     with messenger.schema.MapboxSettings.from_bytes(serialized) as parsed:
-      assert parsed.to_dict()["searchInput"] == 42
+      assert parsed.to_dict()["upcomingTurn"] == 'none'
       assert parsed.to_dict()["timestamp"] == 123456
 
   def test_pub_sub_integration(self):
@@ -58,14 +58,14 @@ class TestMessenger:
     time.sleep(0.01)
 
     msg = messenger.schema.MapboxSettings.new_message()
-    msg.searchInput = 999
+    msg.upcomingTurn = 'right'
     msg.timestamp = 777888
     pub.send('navigationd', msg)
     time.sleep(0.01)
 
     received = sub["navigationd"]
     assert received is not None
-    assert received.searchInput == 999
+    assert received.upcomingTurn == 'right'
     assert received.timestamp == 777888
 
   def test_multiple_services(self):
@@ -90,11 +90,11 @@ services:
       time.sleep(0.01)
 
       msg1 = messenger.schema.MapboxSettings.new_message()
-      msg1.searchInput = 111
+      msg1.upcomingTurn = 'none'
       pub.send("service1", msg1)
 
       msg2 = messenger.schema.MapboxSettings.new_message()
-      msg2.searchInput = 222
+      msg2.upcomingTurn = 'left'
       pub.send("service2", msg2)
       time.sleep(0.01)
 
@@ -102,9 +102,9 @@ services:
       received2 = sub['service2']
 
       assert received1 is not None
-      assert received1.searchInput == 111
+      assert received1.upcomingTurn == 'none'
       assert received2 is not None
-      assert received2.searchInput == 222
+      assert received2.upcomingTurn == 'left'
     finally:
       os.unlink(temp_path)
 
@@ -117,7 +117,7 @@ services:
     assert not sub.alive["navigationd"]  # No messages yet
 
     msg = messenger.schema.MapboxSettings.new_message()
-    msg.searchInput = 42
+    msg.upcomingTurn = 'none'
     data = pub.send('navigationd', msg)
     time.sleep(0.01)
 
