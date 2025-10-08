@@ -15,7 +15,7 @@ class NavigationInstructions:
   def get_route_progress(self, current_lat, current_lon):
     """Get current position on route and distance to next turn"""
     route = self.get_current_route()
-    if not route or not route.get('geometry') or not route.get('steps'):
+    if not route or not route['geometry'] or not route['steps']:
       return None
 
     self.coord.latitude = current_lat
@@ -34,7 +34,7 @@ class NavigationInstructions:
     next_turn = route['steps'][next_turn_index] if next_turn_index < len(route['steps']) else None
     next_turn_distance = max(0, next_turn['cumulative_distance'] - closest_cumulative) if next_turn else None
 
-    current_maxspeed = current_step.get('maxspeed') if current_step else None
+    current_maxspeed = current_step['maxspeed'] if current_step else None
 
     return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn, 'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100, 'current_maxspeed': current_maxspeed}
 
@@ -75,18 +75,18 @@ class NavigationInstructions:
     self._route_loaded = False
 
   def get_upcoming_turn_from_progress(self, progress, current_lat, current_lon) -> str:
-    if progress and progress.get('next_turn'):
+    if progress and progress['next_turn']:
       self.coord.latitude = current_lat
       self.coord.longitude = current_lon
       distance = self.coord.distance_to(progress['next_turn']['location'])
       if distance <= 40:
-        turn_dir = str(progress['next_turn'].get('turn_direction', 'none'))
+        turn_dir = str(progress['next_turn']['turn_direction'])
         if turn_dir != 'none':
           return turn_dir
     return 'none'
 
   def get_current_speed_limit_from_progress(self, progress, is_metric: bool) -> int:
-    if progress and progress.get('current_maxspeed'):
+    if progress and progress['current_maxspeed']:
       speed, _ = progress['current_maxspeed']
       if is_metric:
         return int(speed)
