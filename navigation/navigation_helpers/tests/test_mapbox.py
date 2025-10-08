@@ -1,5 +1,6 @@
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
+from navigation.common.constants import CV
 from messaging.messenger import schema
 
 
@@ -56,20 +57,20 @@ class TestMapbox:
   def test_upcoming_turn_detection(self):
     route, current_lat, current_lon, _ = self._setup_route()
 
-    upcoming = self.nav.get_upcoming_turn(current_lat, current_lon)
+    progress = self.nav.get_route_progress(current_lat, current_lon)
+    upcoming = self.nav.get_upcoming_turn_from_progress(progress, current_lat, current_lon)
     assert isinstance(upcoming, str), "Upcoming turn should be a string"
     assert upcoming == 'none', "Should not detect upcoming turn when far from route turns"
 
     if route['steps']:
       turn_lat = route['steps'][1]['location'].latitude
       turn_lon = route['steps'][1]['location'].longitude
-      close_lat = turn_lat + 0.0003  # Approx 33m closer?
-      upcoming_close = self.nav.get_upcoming_turn(close_lat, turn_lon)
-
-      # Should be 'right' for second step in this planned route
-      expected_turn = route['steps'][1]['turn_direction']
-      if expected_turn != 'none':
-        assert upcoming_close == expected_turn == 'right', f"Should detect '{expected_turn}' turn when close to turn location"
+      close_lat = turn_lat - 0.0003  # Approx 33m before the turn
+      if progress and progress.get('next_turn'):
+        expected_turn = progress['next_turn']['turn_direction']
+        upcoming_close = self.nav.get_upcoming_turn_from_progress(progress, close_lat, turn_lon)
+        if expected_turn != 'none':
+          assert upcoming_close == expected_turn == 'right', f"Should detect '{expected_turn}' turn when close to next turn location"
 
   def test_route_progress_tracking(self):
     route, current_lat, current_lon, _ = self._setup_route()
@@ -86,3 +87,13 @@ class TestMapbox:
     assert 0 <= progress['route_progress_percent'] <= 100, "Route progress should be 0-100%"
     assert route['total_distance'] > 0, "Route distance should be positive"
     assert route['total_duration'] > 0, "Route duration should be positive"
+
+    # Test speed limit extraction
+    speed_limit_metric = self.nav.get_current_speed_limit_from_progress(progress, True)
+    speed_limit_imperial = self.nav.get_current_speed_limit_from_progress(progress, False)
+    assert isinstance(speed_limit_metric, int), "Speed limit should be an integer"
+    assert isinstance(speed_limit_imperial, int), "Speed limit should be an integer"
+    expected_metric = int(progress['current_maxspeed'][0])
+    expected_imperial = int(round(progress['current_maxspeed'][0] * CV.KPH_TO_MPH))
+    assert speed_limit_metric == expected_metric, f"Metric speed limit should be {expected_metric}"
+    assert speed_limit_imperial == expected_imperial, f"Imperial speed limit should be {expected_imperial}"

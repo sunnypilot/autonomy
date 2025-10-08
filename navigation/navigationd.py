@@ -49,11 +49,12 @@ class Navigationd:
       self.update_params()
 
       if self.last_position is not None:
-        upcoming_turn = self.nav_instructions.get_upcoming_turn(self.last_position.latitude, self.last_position.longitude)
-        current_speed_limit = self.nav_instructions.get_current_speed_limit(self.last_position.latitude, self.last_position.longitude, self.is_metric)
+        progress = self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude)
+        upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
+        current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
       else:
         upcoming_turn = 'none'
-        current_speed_limit = 0.0
+        current_speed_limit = 0
 
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)

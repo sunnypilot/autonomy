@@ -12,30 +12,6 @@ class NavigationInstructions:
     self._cached_route = None
     self._route_loaded = False
 
-  def get_upcoming_turn(self, current_lat, current_lon) -> str:
-    route = self.get_current_route()
-    if not route or not route.get('steps'):
-      return 'none'
-    self.coord.latitude = current_lat
-    self.coord.longitude = current_lon
-    for step in route['steps']:
-      turn_dir = str(step.get('turn_direction'))
-      if turn_dir and turn_dir != 'none':
-        distance = self.coord.distance_to(step['location'])
-        if distance <= 40:  # within 131 feet
-          return turn_dir
-    return 'none'
-
-  def get_current_speed_limit(self, current_lat: float, current_lon: float, is_metric: bool) -> int:
-    progress = self.get_route_progress(current_lat, current_lon)
-    if progress and 'current_maxspeed' in progress:
-      speed, _ = progress['current_maxspeed']
-      if is_metric:
-        return int(speed)
-      else:
-        return int(round(speed * CV.KPH_TO_MPH))
-    return 0
-
   def get_route_progress(self, current_lat, current_lon):
     """Get current position on route and distance to next turn"""
     route = self.get_current_route()
@@ -97,3 +73,23 @@ class NavigationInstructions:
   def clear_route_cache(self):
     self._cached_route = None
     self._route_loaded = False
+
+  def get_upcoming_turn_from_progress(self, progress, current_lat, current_lon) -> str:
+    if progress and progress.get('next_turn'):
+      self.coord.latitude = current_lat
+      self.coord.longitude = current_lon
+      distance = self.coord.distance_to(progress['next_turn']['location'])
+      if distance <= 40:
+        turn_dir = str(progress['next_turn'].get('turn_direction', 'none'))
+        if turn_dir != 'none':
+          return turn_dir
+    return 'none'
+
+  def get_current_speed_limit_from_progress(self, progress, is_metric: bool) -> int:
+    if progress and progress.get('current_maxspeed'):
+      speed, _ = progress['current_maxspeed']
+      if is_metric:
+        return int(speed)
+      else:
+        return int(round(speed * CV.KPH_TO_MPH))
+    return 0
