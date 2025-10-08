@@ -34,44 +34,21 @@ class NavigationInstructions:
     self.coord.latitude = current_lat
     self.coord.longitude = current_lon
 
-    temp_coord = Coordinate(0, 0)
-
     # Find closest point on the route polyline
-    min_distance = float('inf')
-    closest_index = 0
-    for i, (longitude, latitude) in enumerate(route['geometry']):
-      temp_coord = Coordinate(latitude, longitude)
-      dist = self.coord.distance_to(temp_coord)
-      if dist < min_distance:
-        min_distance = dist
-        closest_index = i
+    closest_index, min_distance = min(((i, self.coord.distance_to(Coordinate(latitude, longitude))) for i, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1])
     closest_cumulative = route['cumulative_distances'][closest_index]
     current_maxspeed = route['maxspeed'][closest_index] if closest_index < len(route['maxspeed']) else None
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
     current_step_index = max((i for i, step in enumerate(route['steps']) if step['cumulative_distance'] <= closest_cumulative), default=-1)
-
-    if current_step_index == -1:
-      current_step = route['steps'][0] if route['steps'] else None
-    else:
-      current_step = route['steps'][current_step_index]
+    current_step = route['steps'][current_step_index] if current_step_index >= 0 else (route['steps'][0] if route['steps'] else None)
 
     # Next turn is the next step after current
     next_turn_index = current_step_index + 1
     next_turn = route['steps'][next_turn_index] if next_turn_index < len(route['steps']) else None
-    next_turn_distance = None
-    if next_turn:
-      next_turn_distance = max(0, next_turn['cumulative_distance'] - closest_cumulative)
+    next_turn_distance = max(0, next_turn['cumulative_distance'] - closest_cumulative) if next_turn else None
 
-    return {
-      'distance_from_route': min_distance,
-      'route_position_cumulative': closest_cumulative,
-      'current_step': current_step,
-      'next_turn': next_turn,
-      'distance_to_next_turn': next_turn_distance,
-      'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100,
-      'current_maxspeed': current_maxspeed
-    }
+    return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn, 'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100, 'current_maxspeed': current_maxspeed}
 
   def get_current_route(self):
     if self._route_loaded and self._cached_route is not None:
@@ -85,11 +62,7 @@ class NavigationInstructions:
       steps = []
       geometry = [(coord.longitude, coord.latitude) for coord in route.geometry]
       cumulative_distances = [0.0]
-      for j in range(1, len(geometry)):
-        coord1 = Coordinate(geometry[j-1][1], geometry[j-1][0])
-        coord2 = Coordinate(geometry[j][1], geometry[j][0])
-        dist = coord1.distance_to(coord2)
-        cumulative_distances.append(cumulative_distances[-1] + dist)
+      cumulative_distances.extend(cumulative_distances[-1] + Coordinate(geometry[j-1][1], geometry[j-1][0]).distance_to(Coordinate(geometry[j][1], geometry[j][0])) for j in range(1, len(geometry)))
       maxspeed = [(ms.speed, ms.unit) for ms in route.maxspeed]
       for step in route.steps:
         location = Coordinate(step.location.latitude, step.location.longitude)
@@ -104,14 +77,7 @@ class NavigationInstructions:
           'turn_direction': string_to_direction(step.instruction),
           'cumulative_distance': cumulative_distance
         })
-      self._cached_route = {
-        'steps': steps,
-        'total_distance': route.totalDistance,
-        'total_duration': route.totalDuration,
-        'geometry': geometry,
-        'cumulative_distances': cumulative_distances,
-        'maxspeed': maxspeed
-      }
+      self._cached_route = {'steps': steps, 'total_distance': route.totalDistance, 'total_duration': route.totalDuration, 'geometry': geometry, 'cumulative_distances': cumulative_distances, 'maxspeed': maxspeed}
       self._route_loaded = True
       return self._cached_route
 
