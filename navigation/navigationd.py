@@ -25,7 +25,7 @@ class Navigationd:
       new_destination = str(self.params.get("MapboxRoute", encoding='utf8'))
       if new_destination != self.destination and new_destination != "":
         postvars = {"place_name": new_destination}
-        postvars, valid_addr = self.mapbox.set_destination(postvars, False, self.last_position.longitude, self.last_position.latitude)
+        postvars, valid_addr = self.mapbox.set_destination(postvars, self.last_position.longitude, self.last_position.latitude)
         print(f"Set new destination to: {new_destination}, valid: {valid_addr}")  # debugging. delete me later!
         if valid_addr:
           self.destination = new_destination

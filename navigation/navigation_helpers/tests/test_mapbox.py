@@ -10,9 +10,6 @@ class TestMapbox:
     self.nav = NavigationInstructions()
 
   def _setup_route(self):
-    settings = self.mapbox._load_mapbox_settings()
-    self.mapbox.params.put("MapboxSettings", settings.to_bytes())
-
     # setup route
     current_lon, current_lat = -119.17557, 34.23305
     user_input_location = "740 E Ventura Blvd. Camarillo, CA"
@@ -20,7 +17,7 @@ class TestMapbox:
       "place_name": user_input_location
     }
 
-    postvars, valid_addr = self.mapbox.set_destination(postvars, False, current_lon, current_lat)
+    postvars, valid_addr = self.mapbox.set_destination(postvars, current_lon, current_lat)
     assert valid_addr, "Failed to geocode the location."
     route = self.nav.get_current_route()
     assert route is not None, "Route should be generated"
