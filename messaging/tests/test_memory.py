@@ -58,9 +58,8 @@ def test_memory_leak_submaster(capsys):
 
         msg.timestamp = int(publish_time * 1000000)  # microseconds
 
-        msg.navData.current.latitude = 37.8 + (i % 50) * 0.01
-        msg.navData.current.longitude = -122.3 + (i % 50) * 0.01
-        msg.navData.current.placeName = f"Sunnypilot HQ {i % 10}"
+        msg.navData.current.latitude = 37.8 + (i % 150) * 0.01
+        msg.navData.current.longitude = -122.3 + (i % 150) * 0.01
 
         msg.navData.route.steps = [
           {"instruction": f"Turn {i % 100}", "distance": 100.0 + (i % 100) * 10.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4 + (i % 100) * 0.01, "latitude": 37.7 + (i % 100) * 0.01}}]

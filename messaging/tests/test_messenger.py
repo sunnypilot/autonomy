@@ -140,7 +140,6 @@ services:
     msg = messenger.schema.MapboxSettings.new_message()
     msg.navData.current.latitude = 37.77493
     msg.navData.current.longitude = -122.41945
-    msg.navData.current.placeName = "San Francisco"
     msg.navData.route.steps = [  # something basic, this is one step of a fake route, but has enough detail to test the structure of the msg.
       {"instruction": "Turn left", "distance": 100.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4, "latitude": 37.7}},
     ]
@@ -152,7 +151,6 @@ services:
 
     assert received.navData.current.latitude == 37.77493
     assert received.navData.current.longitude == -122.41945
-    assert received.navData.current.placeName == "San Francisco"
     assert len(received.navData.route.steps) == 1
     assert received.navData.route.steps[0].instruction == "Turn left"
     assert received.timestamp == 123456789

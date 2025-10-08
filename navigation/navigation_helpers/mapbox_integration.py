@@ -76,13 +76,11 @@ class MapboxIntegration:
 
     latitude = float(postvars.get("latitude"))
     longitude = float(postvars.get("longitude"))
-    name = postvars.get("name") or f"{latitude},{longitude}"
 
     settings = self._load_mapbox_settings()
     current = settings.navData.current
     current.latitude = latitude
     current.longitude = longitude
-    current.placeName = name
 
     token = self.get_public_token()
     route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)

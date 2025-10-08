@@ -9,7 +9,6 @@ struct MapboxSettings @0x8d30477844c72468 {
   struct Destination {
     latitude @0 :Float64;
     longitude @1 :Float64;
-    placeName @2 :Text;
   }
 
   struct RouteStep {
