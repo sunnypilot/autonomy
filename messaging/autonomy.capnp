@@ -6,11 +6,6 @@ struct MapboxSettings @0x8d30477844c72468 {
   timestamp @1 :UInt64;
   upcomingTurn @2 :Text;
 
-  struct GPSPosition {
-    longitude @0 :Float64;
-    latitude @1 :Float64;
-  }
-
   struct Destination {
     latitude @0 :Float64;
     longitude @1 :Float64;
@@ -22,7 +17,7 @@ struct MapboxSettings @0x8d30477844c72468 {
     distance @1 :Float64;
     duration @2 :Float64;
     maneuver @3 :Text;
-    location @4 :GPSPosition;
+    location @4 :Destination;
   }
 
   struct MaxSpeedEntry {
@@ -34,7 +29,7 @@ struct MapboxSettings @0x8d30477844c72468 {
     steps @0 :List(RouteStep);
     totalDistance @1 :Float64;
     totalDuration @2 :Float64;
-    geometry @3 :List(GPSPosition);
+    geometry @3 :List(Destination);
     maxspeed @4 :List(MaxSpeedEntry);
   }
 

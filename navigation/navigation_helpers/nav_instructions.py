@@ -6,7 +6,7 @@ from messaging.messenger import schema
 class NavigationInstructions:
   def __init__(self):
     self.params = Params()
-    self.params_capnp = schema
+    self.autonomy_schema = schema
     self.coord = Coordinate(0, 0)
     self._cached_route = None
     self._route_loaded = False
@@ -80,7 +80,7 @@ class NavigationInstructions:
     param_value = self.params.get("MapboxSettings", encoding='bytes')
     if not param_value:
       return None
-    with self.params_capnp.MapboxSettings.from_bytes(param_value) as settings:
+    with self.autonomy_schema.MapboxSettings.from_bytes(param_value) as settings:
       route = settings.navData.route
       steps = []
       geometry = [(coord.longitude, coord.latitude) for coord in route.geometry]

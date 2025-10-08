@@ -8,15 +8,15 @@ from messaging.messenger import schema
 class MapboxIntegration:
   def __init__(self):
     self.params = Params()
-    self.params_capnp = schema
+    self.autonomy_schema = schema
 
   def _load_mapbox_settings(self):
-    settings = self.params_capnp.MapboxSettings.new_message()
+    settings = self.autonomy_schema.MapboxSettings.new_message()
     settings.init('navData').init('route')
     return settings
   
   def get_public_token(self):
-    token = self.params.get("MapboxToken", encoding='utf8')
+    token = self.params.get("MapboxToken", return_default=True)
     return token
 
   def _populate_route(self, settings, route_data):
