@@ -1,4 +1,5 @@
 from navigation.common.params.params import Params
+from navigation.common.constants import CV
 from navigation.navd.helpers import Coordinate, string_to_direction
 from messaging.messenger import schema
 
@@ -25,6 +26,16 @@ class NavigationInstructions:
           return turn_dir
     return 'none'
 
+  def get_current_speed_limit(self, current_lat: float, current_lon: float, is_metric: bool) -> int:
+    progress = self.get_route_progress(current_lat, current_lon)
+    if progress and 'current_maxspeed' in progress:
+      speed, _ = progress['current_maxspeed']
+      if is_metric:
+        return int(speed)
+      else:
+        return int(round(speed * CV.KPH_TO_MPH))
+    return 0
+
   def get_route_progress(self, current_lat, current_lon):
     """Get current position on route and distance to next turn"""
     route = self.get_current_route()
@@ -37,7 +48,6 @@ class NavigationInstructions:
     # Find closest point on the route polyline
     closest_index, min_distance = min(((i, self.coord.distance_to(Coordinate(latitude, longitude))) for i, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1])
     closest_cumulative = route['cumulative_distances'][closest_index]
-    current_maxspeed = route['maxspeed'][closest_index] if closest_index < len(route['maxspeed']) else None
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
     current_step_index = max((i for i, step in enumerate(route['steps']) if step['cumulative_distance'] <= closest_cumulative), default=-1)
@@ -47,6 +57,8 @@ class NavigationInstructions:
     next_turn_index = current_step_index + 1
     next_turn = route['steps'][next_turn_index] if next_turn_index < len(route['steps']) else None
     next_turn_distance = max(0, next_turn['cumulative_distance'] - closest_cumulative) if next_turn else None
+
+    current_maxspeed = current_step.get('maxspeed') if current_step else None
 
     return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn, 'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100, 'current_maxspeed': current_maxspeed}
 
@@ -75,7 +87,8 @@ class NavigationInstructions:
           'maneuver': step.maneuver,
           'location': location,
           'turn_direction': string_to_direction(step.instruction),
-          'cumulative_distance': cumulative_distance
+          'cumulative_distance': cumulative_distance,
+          'maxspeed': maxspeed[closest_index] if closest_index < len(maxspeed) else None
         })
       self._cached_route = {'steps': steps, 'total_distance': route.totalDistance, 'total_duration': route.totalDuration, 'geometry': geometry, 'cumulative_distances': cumulative_distances, 'maxspeed': maxspeed}
       self._route_loaded = True

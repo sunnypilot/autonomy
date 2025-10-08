@@ -5,6 +5,7 @@ struct MapboxSettings @0x8d30477844c72468 {
   navData @0 :NavData;
   timestamp @1 :UInt64;
   upcomingTurn @2 :Text;
+  currentSpeedLimit @3 :Float64;
 
   struct Destination {
     latitude @0 :Float64;

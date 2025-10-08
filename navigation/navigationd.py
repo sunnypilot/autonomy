@@ -19,9 +19,11 @@ class Navigationd:
     self.destination = None
     self.frame = -1
     self.last_position = None
+    self.is_metric = False
 
   def update_params(self):
     if self.frame % 15 == 0 and self.last_position is not None:
+      self.is_metric = bool(self.params.get("IsMetric", return_default=True))
       new_destination = str(self.params.get("MapboxRoute", encoding='utf8'))
       if new_destination != self.destination and new_destination != "":
         postvars = {"place_name": new_destination}
@@ -48,12 +50,15 @@ class Navigationd:
 
       if self.last_position is not None:
         upcoming_turn = self.nav_instructions.get_upcoming_turn(self.last_position.latitude, self.last_position.longitude)
+        current_speed_limit = self.nav_instructions.get_current_speed_limit(self.last_position.latitude, self.last_position.longitude, self.is_metric)
       else:
         upcoming_turn = 'none'
+        current_speed_limit = 0.0
 
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)
       msg.upcomingTurn = upcoming_turn
+      msg.currentSpeedLimit = current_speed_limit
       self.pm.send('navigationd', msg)
       time.sleep(self.pm['navigationd'].rate_hz)
 
