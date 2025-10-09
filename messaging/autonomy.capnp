@@ -10,6 +10,7 @@ struct MapboxSettings @0x8d30477844c72468 {
   routeProgressPercent @5 :Float64;
   distanceFromRoute @6 :Float64;
   routePositionCumulative @7 :Float64;
+  distanceToEndOfStep @8 :Float64;
 }
 
 struct LiveLocationKalman @0xe98c100195e6f0c0 {

@@ -36,7 +36,9 @@ class NavigationInstructions:
 
     current_maxspeed = current_step['maxspeed'] if current_step else None
 
-    return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn, 'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100, 'current_maxspeed': current_maxspeed}
+    distance_to_end_of_step = max(0, current_step['distance'] - (closest_cumulative - current_step['cumulative_distance'])) if current_step else None
+
+    return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn, 'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100, 'current_maxspeed': current_maxspeed, 'distance_to_end_of_step': distance_to_end_of_step}
 
   def get_current_route(self):
     if self._route_loaded and self._cached_route is not None:

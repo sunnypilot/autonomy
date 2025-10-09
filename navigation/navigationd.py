@@ -52,6 +52,7 @@ class Navigationd:
       current_speed_limit = 0
       current_instruction = ''
       distance_to_next_turn = 0.0
+      distance_to_end_of_step = 0.0
       route_progress_percent = 0.0
       distance_from_route = 0.0
       route_position_cumulative = 0.0
@@ -63,6 +64,7 @@ class Navigationd:
           current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
           current_instruction = progress['current_step']['instruction']
           distance_to_next_turn = progress['distance_to_next_turn']
+          distance_to_end_of_step = progress.get('distance_to_end_of_step', 0.0)
           route_progress_percent = progress['route_progress_percent']
           distance_from_route = progress['distance_from_route']
           route_position_cumulative = progress['route_position_cumulative']
@@ -73,6 +75,7 @@ class Navigationd:
       msg.currentSpeedLimit = current_speed_limit
       msg.currentInstruction = current_instruction
       msg.distanceToNextTurn = distance_to_next_turn
+      msg.distanceToEndOfStep = distance_to_end_of_step
       msg.routeProgressPercent = route_progress_percent
       msg.distanceFromRoute = distance_from_route
       msg.routePositionCumulative = route_position_cumulative
