@@ -1,39 +1,18 @@
 from urllib.parse import quote
+import json
 import requests
+
 from navigation.common.params.params import Params
 from navigation.navd.helpers import Coordinate
-from messaging.messenger import schema
 
 
 class MapboxIntegration:
   def __init__(self):
     self.params = Params()
-    self.autonomy_schema = schema
 
   def get_public_token(self) -> str:
     token = str(self.params.get('MapboxToken', return_default=True))
     return token
-
-  def _populate_route(self, settings, route_data) -> None:
-    settings.navData.route.totalDistance = route_data['total_distance']
-    settings.navData.route.totalDuration = route_data['total_duration']
-    route_steps = settings.navData.route.init('steps', len(route_data['steps']))
-    for idx, step in enumerate(route_data['steps']):
-      route_steps[idx].instruction = step['instruction']
-      route_steps[idx].distance = step['distance']
-      route_steps[idx].duration = step['duration']
-      route_steps[idx].maneuver = step['maneuver']
-      route_steps[idx].location.longitude = step['location'].longitude
-      route_steps[idx].location.latitude = step['location'].latitude
-      route_steps[idx].modifier = step['modifier']
-    route_geometry = settings.navData.route.init('geometry', len(route_data['geometry']))
-    for idx, coord in enumerate(route_data['geometry']):
-      route_geometry[idx].longitude = coord[0]
-      route_geometry[idx].latitude = coord[1]
-    maxspeed_entries = settings.navData.route.init('maxspeed', len(route_data['maxspeed']))
-    for idx, ms in enumerate(route_data['maxspeed']):
-      maxspeed_entries[idx].speed = ms['speed']
-      maxspeed_entries[idx].unit = ms['unit']
 
   def set_destination(self, postvars, current_lon, current_lat) -> tuple[dict, bool]:
     if 'latitude' in postvars and 'longitude' in postvars:
@@ -63,17 +42,34 @@ class MapboxIntegration:
     latitude = float(postvars['latitude'])
     longitude = float(postvars['longitude'])
 
-    settings = self.autonomy_schema.MapboxSettings.new_message()
-    settings.init('navData').init('route')
-    current = settings.navData.current
-    current.latitude = latitude
-    current.longitude = longitude
+    data = {
+      'navData': {
+        'current': {'latitude': latitude, 'longitude': longitude},
+        'route': {}
+      }
+    }
 
     token = self.get_public_token()
     route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)
     if route_data:
-      self._populate_route(settings, route_data)
-    self.params.put('MapboxSettings', settings.to_bytes())
+      data['navData']['route'] = {
+        'steps': [
+          {
+            'maneuver': step['maneuver'],
+            'instruction': step['instruction'],
+            'distance': step['distance'],
+            'duration': step['duration'],
+            'location': {'latitude': step['location'].latitude, 'longitude': step['location'].longitude},
+            'modifier': step['modifier'],
+          }
+          for step in route_data['steps']
+        ],
+        'totalDistance': route_data['total_distance'],
+        'totalDuration': route_data['total_duration'],
+        'geometry': [{'longitude': coord[0], 'latitude': coord[1]} for coord in route_data['geometry']],
+        'maxspeed': route_data['maxspeed']
+      }
+    self.params.put('MapboxSettings', json.dumps(data))
 
   def generate_route(self, start_lon, start_lat, end_lon, end_lat, token) -> dict | None:
     if not token:

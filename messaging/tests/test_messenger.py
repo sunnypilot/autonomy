@@ -129,28 +129,3 @@ services:
     with sub._lock:
       sub.services["navigationd"]["received_at"] = time.monotonic() - 2.0
     assert not sub.alive["navigationd"]
-
-  def test_nested_message_structure(self):
-    pub = messenger.PubMaster("navigationd")
-    self.instances.append(pub)
-    sub = messenger.SubMaster("navigationd")
-    self.instances.append(sub)
-    time.sleep(0.01)
-
-    msg = messenger.schema.MapboxSettings.new_message()
-    msg.navData.current.latitude = 37.77493
-    msg.navData.current.longitude = -122.41945
-    msg.navData.route.steps = [  # something basic, this is one step of a fake route, but has enough detail to test the structure of the msg.
-      {"instruction": "Turn left", "distance": 100.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4, "latitude": 37.7}},
-    ]
-    msg.timestamp = 123456789
-
-    pub.send('navigationd', msg)
-    time.sleep(0.01)
-    received = sub["navigationd"]
-
-    assert received.navData.current.latitude == 37.77493
-    assert received.navData.current.longitude == -122.41945
-    assert len(received.navData.route.steps) == 1
-    assert received.navData.route.steps[0].instruction == "Turn left"
-    assert received.timestamp == 123456789
