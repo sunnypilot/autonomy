@@ -42,7 +42,7 @@ class MapboxIntegration:
     latitude = float(postvars['latitude'])
     longitude = float(postvars['longitude'])
 
-    data = {
+    data: dict = {
       'navData': {
         'current': {'latitude': latitude, 'longitude': longitude},
         'route': {}
