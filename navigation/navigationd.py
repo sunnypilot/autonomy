@@ -48,18 +48,28 @@ class Navigationd:
 
       self.update_params()
 
+      upcoming_turn = 'none'
+      current_speed_limit = 0
+      current_instruction = ''
+      distance_to_next_turn = 0.0
+      route_progress_percent = 0.0
+
       if self.last_position is not None:
         progress = self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude)
-        upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
-        current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
-      else:
-        upcoming_turn = 'none'
-        current_speed_limit = 0
+        if progress:
+          upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
+          current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
+          current_instruction = progress['current_step']['instruction']
+          distance_to_next_turn = progress['distance_to_next_turn']
+          route_progress_percent = progress['route_progress_percent']
 
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)
       msg.upcomingTurn = upcoming_turn
       msg.currentSpeedLimit = current_speed_limit
+      msg.currentInstruction = current_instruction
+      msg.distanceToNextTurn = distance_to_next_turn
+      msg.routeProgressPercent = route_progress_percent
       self.pm.send('navigationd', msg)
       time.sleep(self.pm['navigationd'].rate_hz)
 

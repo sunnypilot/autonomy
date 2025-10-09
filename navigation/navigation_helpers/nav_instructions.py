@@ -13,7 +13,7 @@ class NavigationInstructions:
     self._route_loaded = False
 
   def get_route_progress(self, current_lat, current_lon):
-    """Get current position on route and distance to next turn"""
+    '''Get current position on route and distance to next turn'''
     route = self.get_current_route()
     if not route or not route['geometry'] or not route['steps']:
       return None
@@ -42,7 +42,7 @@ class NavigationInstructions:
     if self._route_loaded and self._cached_route is not None:
       return self._cached_route
 
-    param_value = self.params.get("MapboxSettings", encoding='bytes')
+    param_value = self.params.get('MapboxSettings', encoding='bytes')
     if not param_value:
       return None
     with self.autonomy_schema.MapboxSettings.from_bytes(param_value) as settings:
@@ -62,9 +62,9 @@ class NavigationInstructions:
           'duration': step.duration,
           'maneuver': step.maneuver,
           'location': location,
-          'turn_direction': string_to_direction(step.instruction),
           'cumulative_distance': cumulative_distance,
-          'maxspeed': maxspeed[closest_index] if closest_index < len(maxspeed) else None
+          'maxspeed': maxspeed[closest_index] if closest_index < len(maxspeed) else None,
+          'modifier': string_to_direction(step.modifier)
         })
       self._cached_route = {'steps': steps, 'total_distance': route.totalDistance, 'total_duration': route.totalDuration, 'geometry': geometry, 'cumulative_distances': cumulative_distances, 'maxspeed': maxspeed}
       self._route_loaded = True
@@ -80,9 +80,9 @@ class NavigationInstructions:
       self.coord.longitude = current_lon
       distance = self.coord.distance_to(progress['next_turn']['location'])
       if distance <= 40:
-        turn_dir = str(progress['next_turn']['turn_direction'])
-        if turn_dir != 'none':
-          return turn_dir
+        modifier = progress['next_turn']['modifier']
+        if modifier:
+          return modifier
     return 'none'
 
   def get_current_speed_limit_from_progress(self, progress, is_metric: bool) -> int:

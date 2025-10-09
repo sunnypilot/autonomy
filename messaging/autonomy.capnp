@@ -6,6 +6,9 @@ struct MapboxSettings @0x8d30477844c72468 {
   timestamp @1 :UInt64;
   upcomingTurn @2 :Text;
   currentSpeedLimit @3 :Float64;
+  currentInstruction @4 :Text;
+  distanceToNextTurn @5 :Float64;
+  routeProgressPercent @6 :Float64;
 
   struct Destination {
     latitude @0 :Float64;
@@ -18,6 +21,7 @@ struct MapboxSettings @0x8d30477844c72468 {
     duration @2 :Float64;
     maneuver @3 :Text;
     location @4 :Destination;
+    modifier @5 :Text;
   }
 
   struct MaxSpeedEntry {

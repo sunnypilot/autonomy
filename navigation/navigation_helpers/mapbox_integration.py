@@ -11,7 +11,7 @@ class MapboxIntegration:
     self.autonomy_schema = schema
 
   def get_public_token(self) -> str:
-    token = str(self.params.get("MapboxToken", return_default=True))
+    token = str(self.params.get('MapboxToken', return_default=True))
     return token
 
   def _populate_route(self, settings, route_data) -> None:
@@ -25,6 +25,7 @@ class MapboxIntegration:
       route_steps[idx].maneuver = step['maneuver']
       route_steps[idx].location.longitude = step['location'].longitude
       route_steps[idx].location.latitude = step['location'].latitude
+      route_steps[idx].modifier = step['modifier']
     route_geometry = settings.navData.route.init('geometry', len(route_data['geometry']))
     for idx, coord in enumerate(route_data['geometry']):
       route_geometry[idx].longitude = coord[0]
@@ -35,22 +36,22 @@ class MapboxIntegration:
       maxspeed_entries[idx].unit = ms['unit']
 
   def set_destination(self, postvars, current_lon, current_lat) -> tuple[dict, bool]:
-    if postvars.get("latitude") is not None and postvars.get("longitude") is not None:
+    if 'latitude' in postvars and 'longitude' in postvars:
       self.nav_confirmed(postvars, current_lon, current_lat)
       return postvars, True
 
-    addr = postvars.get("place_name")
+    addr = postvars.get('place_name')
     if not addr:
       return postvars, False
 
     token = self.get_public_token()
-    query = f"https://api.mapbox.com/geocoding/v5/mapbox.places/{quote(addr)}.json?access_token={token}&limit=1&proximity={current_lon},{current_lat}"
+    query = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{quote(addr)}.json?access_token={token}&limit=1&proximity={current_lon},{current_lat}'
     response = requests.get(query)
     if response.status_code == 200:
-      features = response.json().get("features", [])
+      features = response.json().get('features', [])
       if features:
-        longitude, latitude = features[0]["geometry"]["coordinates"]
-        postvars.update({"latitude": latitude, "longitude": longitude, "name": addr})
+        longitude, latitude = features[0]['geometry']['coordinates']
+        postvars.update({'latitude': latitude, 'longitude': longitude, 'name': addr})
         self.nav_confirmed(postvars, current_lon, current_lat)
         return postvars, True
     return postvars, False
@@ -59,8 +60,8 @@ class MapboxIntegration:
     if not postvars:
       return
 
-    latitude = float(postvars.get("latitude"))
-    longitude = float(postvars.get("longitude"))
+    latitude = float(postvars['latitude'])
+    longitude = float(postvars['longitude'])
 
     settings = self.autonomy_schema.MapboxSettings.new_message()
     settings.init('navData').init('route')
@@ -72,14 +73,14 @@ class MapboxIntegration:
     route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)
     if route_data:
       self._populate_route(settings, route_data)
-    self.params.put("MapboxSettings", settings.to_bytes())
+    self.params.put('MapboxSettings', settings.to_bytes())
 
   def generate_route(self, start_lon, start_lat, end_lon, end_lat, token) -> dict | None:
     if not token:
       return None
 
     response = requests.get(
-      f"https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}",
+      f'https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}',
       params={
         'access_token': token,
         'geometries': 'geojson',
@@ -89,6 +90,9 @@ class MapboxIntegration:
       }
     )
     data = response.json() if response.status_code == 200 else {}
+    if data['code'] != 'Ok':  # status code 200 returns Ok, NoRoute, or NoSegment, we only want Ok responses
+      return None
+
     routes = data.get('routes', [])
     legs = routes[0].get('legs', []) if routes else []
 
@@ -100,17 +104,18 @@ class MapboxIntegration:
     steps = [
       {
         'maneuver': step['maneuver']['type'],
-        'instruction': step['maneuver'].get('instruction', ''),
+        'instruction': step['maneuver']['instruction'],
         'distance': step['distance'],
         'duration': step['duration'],
         'location': Coordinate.from_mapbox_tuple(tuple(step['maneuver']['location'])),
+        'modifier': step['maneuver'].get('modifier', 'none'),
       }
       for step in leg['steps']
     ]
 
     maxspeed = [
-      {'speed': round(float(item.get('speed', item.get('value', 0)))), 'unit': 'km/h'}
-      for item in leg['annotation']['maxspeed']
+      {'speed': item['speed'], 'unit': item['unit']}
+      for item in leg['annotation']['maxspeed'] if 'speed' in item
     ]
 
     return {

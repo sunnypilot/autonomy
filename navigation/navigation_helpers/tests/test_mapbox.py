@@ -43,9 +43,11 @@ class TestMapbox:
 
     maxspeed_kph = [(speed, unit) for speed, unit in self.route['maxspeed'] if speed > 0]
     print(f"Maxspeed: {maxspeed_kph}")
+    modifiers = [step['modifier'] for step in self.route['steps']]
+    print(f"Modifiers: {modifiers}")
     if self.route and 'steps' in self.route:
       for step in self.route['steps']:
-        assert 'turn_direction' in step, "Each step should have turn_direction"
+        assert 'modifier' in step, "Each step should have a turn in this sample"
 
   def test_upcoming_turn_detection(self):
     progress = self.nav.get_route_progress(self.current_lat, self.current_lon)
@@ -58,9 +60,9 @@ class TestMapbox:
       turn_lon = self.route['steps'][1]['location'].longitude
       close_lat = turn_lat - 0.0003  # 30m before turn
       if progress and progress.get('next_turn'):
-        expected_turn = progress['next_turn']['turn_direction']
+        expected_turn = progress['next_turn']['modifier']
         upcoming_close = self.nav.get_upcoming_turn_from_progress(progress, close_lat, turn_lon)
-        if expected_turn != 'none':
+        if expected_turn:
           assert upcoming_close == expected_turn == 'right', f"Should detect '{expected_turn}' turn when close to next turn location"
 
   def test_route_progress_tracking(self):
