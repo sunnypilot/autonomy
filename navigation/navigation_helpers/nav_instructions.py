@@ -45,17 +45,15 @@ class NavigationInstructions:
       return self._cached_route
 
     param_value = self.params.get('MapboxSettings')
-    if not param_value:
-      return None
     try:
       settings = json.loads(param_value)
-    except json.JSONDecodeError:
-      return None
-
-    route = settings['navData']['route']
+      route = settings.get('navData', {}).get('route')
+    except (json.JSONDecodeError, KeyError):
+      route = None
     if not route:
       return None
     steps = []
+
     geometry = [(coord['longitude'], coord['latitude']) for coord in route['geometry']]
     cumulative_distances = [0.0]
     cumulative_distances.extend(cumulative_distances[-1] + Coordinate(geometry[j-1][1], geometry[j-1][0]).distance_to(Coordinate(geometry[j][1], geometry[j][0])) for j in range(1, len(geometry)))
