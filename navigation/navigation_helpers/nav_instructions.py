@@ -47,7 +47,11 @@ class NavigationInstructions:
     param_value = self.params.get('MapboxSettings')
     if not param_value:
       return None
-    settings = json.loads(param_value)
+    try:
+      settings = json.loads(param_value)
+    except json.JSONDecodeError:
+      return None
+
     route = settings['navData']['route']
     if not route:
       return None
