@@ -68,6 +68,7 @@ class Navigationd:
           route_position_cumulative = progress['route_position_cumulative']
 
       msg = messenger.schema.MapboxSettings.new_message()
+      msg.timestamp = int(time.monotonic() * 1000)
       msg.upcomingTurn = upcoming_turn
       msg.currentSpeedLimit = current_speed_limit
       msg.currentInstruction = current_instruction
