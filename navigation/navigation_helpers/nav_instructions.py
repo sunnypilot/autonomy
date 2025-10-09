@@ -82,7 +82,7 @@ class NavigationInstructions:
       if distance <= 40:
         modifier = progress['next_turn']['modifier']
         if modifier:
-          return modifier
+          return str(modifier)
     return 'none'
 
   def get_current_speed_limit_from_progress(self, progress, is_metric: bool) -> int:

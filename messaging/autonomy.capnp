@@ -3,12 +3,13 @@
 
 struct MapboxSettings @0x8d30477844c72468 {
   navData @0 :NavData;
-  timestamp @1 :UInt64;
-  upcomingTurn @2 :Text;
-  currentSpeedLimit @3 :Float64;
-  currentInstruction @4 :Text;
-  distanceToNextTurn @5 :Float64;
-  routeProgressPercent @6 :Float64;
+  upcomingTurn @1 :Text;
+  currentSpeedLimit @2 :Float64;
+  currentInstruction @3 :Text;
+  distanceToNextTurn @4 :Float64;
+  routeProgressPercent @5 :Float64;
+  distanceFromRoute @6 :Float64;
+  routePositionCumulative @7 :Float64;
 
   struct Destination {
     latitude @0 :Float64;
