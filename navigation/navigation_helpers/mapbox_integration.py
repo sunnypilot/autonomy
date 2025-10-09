@@ -1,5 +1,4 @@
 from urllib.parse import quote
-import json
 import requests
 
 from navigation.common.params.params import Params
@@ -69,7 +68,7 @@ class MapboxIntegration:
         'geometry': [{'longitude': coord[0], 'latitude': coord[1]} for coord in route_data['geometry']],
         'maxspeed': route_data['maxspeed']
       }
-    self.params.put('MapboxSettings', json.dumps(data))
+    self.params.put('MapboxSettings', data)
 
   def generate_route(self, start_lon, start_lat, end_lon, end_lat, token) -> dict | None:
     if not token:

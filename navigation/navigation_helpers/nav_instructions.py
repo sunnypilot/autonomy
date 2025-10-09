@@ -1,5 +1,3 @@
-import json
-
 from navigation.common.params.params import Params
 from navigation.common.constants import CV
 from navigation.navd.helpers import Coordinate, string_to_direction
@@ -46,9 +44,8 @@ class NavigationInstructions:
 
     param_value = self.params.get('MapboxSettings')
     try:
-      settings = json.loads(param_value)
-      route = settings.get('navData', {}).get('route')
-    except (json.JSONDecodeError, KeyError):
+      route = param_value.get('navData', {}).get('route')
+    except (AttributeError, KeyError):
       route = None
     if not route:
       return None

@@ -1,5 +1,3 @@
-import json
-
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
 from navigation.common.constants import CV
@@ -24,9 +22,8 @@ class TestMapbox:
     assert len(cls.route['steps']) > 0, "Route should have at least one step"
 
   def test_set_destination(self):
-    stored = self.mapbox.params.get('MapboxSettings')
-    assert stored is not None, "MapboxSettings not stored"
-    settings = json.loads(stored)
+    settings = self.mapbox.params.get('MapboxSettings')
+    assert settings is not None, "MapboxSettings not stored"
     dest_lat = settings['navData']['current']['latitude']
     dest_lon = settings['navData']['current']['longitude']
     assert dest_lat == self.postvars["latitude"] and dest_lon == self.postvars["longitude"], "Destination coordinates not stored correctly"
