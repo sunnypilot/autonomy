@@ -15,11 +15,21 @@ class Navigationd:
     self.nav_instructions = NavigationInstructions()
     self.sm = messenger.SubMaster('livelocationd')
     self.pm = messenger.PubMaster('navigationd')
+
     self.route = None
     self.destination = None
     self.frame = -1
     self.last_position = None
     self.is_metric = False
+
+    self.upcoming_turn = 'none'
+    self.current_speed_limit = 0
+    self.current_instruction = ''
+    self.distance_to_next_turn = 0.0
+    self.distance_to_end_of_step = 0.0
+    self.route_progress_percent = 0.0
+    self.distance_from_route = 0.0
+    self.route_position_cumulative = 0.0
 
   def update_params(self):
     if self.frame % 15 == 0 and self.last_position is not None:
@@ -43,42 +53,31 @@ class Navigationd:
 
       if gps_msg:
         self.last_position = Coordinate(gps_msg.positionGeodetic.value[0], gps_msg.positionGeodetic.value[1])
-      else:
-        self.last_position = None
 
       self.update_params()
-
-      upcoming_turn = 'none'
-      current_speed_limit = 0
-      current_instruction = ''
-      distance_to_next_turn = 0.0
-      distance_to_end_of_step = 0.0
-      route_progress_percent = 0.0
-      distance_from_route = 0.0
-      route_position_cumulative = 0.0
 
       if self.last_position is not None:
         progress = self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude)
         if progress:
-          upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
-          current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
-          current_instruction = progress['current_step']['instruction']
-          distance_to_next_turn = progress['distance_to_next_turn']
-          distance_to_end_of_step = progress.get('distance_to_end_of_step', 0.0)
-          route_progress_percent = progress['route_progress_percent']
-          distance_from_route = progress['distance_from_route']
-          route_position_cumulative = progress['route_position_cumulative']
+          self.upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
+          self.current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
+          self.current_instruction = progress['current_step']['instruction']
+          self.distance_to_next_turn = progress['distance_to_next_turn']
+          self.distance_to_end_of_step = progress.get('distance_to_end_of_step', 0.0)
+          self.route_progress_percent = progress['route_progress_percent']
+          self.distance_from_route = progress['distance_from_route']
+          self.route_position_cumulative = progress['route_position_cumulative']
 
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)
-      msg.upcomingTurn = upcoming_turn
-      msg.currentSpeedLimit = current_speed_limit
-      msg.currentInstruction = current_instruction
-      msg.distanceToNextTurn = distance_to_next_turn
-      msg.distanceToEndOfStep = distance_to_end_of_step
-      msg.routeProgressPercent = route_progress_percent
-      msg.distanceFromRoute = distance_from_route
-      msg.routePositionCumulative = route_position_cumulative
+      msg.upcomingTurn = self.upcoming_turn
+      msg.currentSpeedLimit = self.current_speed_limit
+      msg.currentInstruction = self.current_instruction
+      msg.distanceToNextTurn = self.distance_to_next_turn
+      msg.distanceToEndOfStep = self.distance_to_end_of_step
+      msg.routeProgressPercent = self.route_progress_percent
+      msg.distanceFromRoute = self.distance_from_route
+      msg.routePositionCumulative = self.route_position_cumulative
       self.pm.send('navigationd', msg)
       time.sleep(self.pm['navigationd'].rate_hz)
 
