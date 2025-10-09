@@ -19,13 +19,13 @@ class TestMessenger:
   def test_load_registry(self):
     registry = messenger.load_registry("messaging/services.yaml")
     assert "navigationd" in registry
-    assert registry["navigationd"]["rate_hz"] == 5
+    assert registry["navigationd"]["rate_hz"] == 3
     assert registry["navigationd"]["schema_type"] == messenger.schema.MapboxSettings
 
   def test_sub_and_pub_master_init(self):
     pub = messenger.PubMaster("navigationd")
     self.instances.append(pub)
-    assert pub['navigationd'].rate_hz == 0.2
+    assert pub['navigationd'].rate_hz == 0.3333333333333333
 
     sub = messenger.SubMaster("navigationd")
     self.instances.append(sub)
@@ -125,7 +125,6 @@ services:
     sub.services["navigationd"]["received_at"] = time.monotonic()  # set to current time
     assert sub.alive["navigationd"]
 
-    # fake an old message. This also tests timeout from getitem, which is 2 seconds for navigationd
     with sub._lock:
-      sub.services["navigationd"]["received_at"] = time.monotonic() - 2.0
+      sub.services["navigationd"]["received_at"] = time.monotonic() - sub.services["navigationd"]["timeout_seconds"]
     assert not sub.alive["navigationd"]
