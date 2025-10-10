@@ -34,7 +34,7 @@ class Navigationd:
   def update_params(self):
     if self.frame % 15 == 0 and self.last_position is not None:
       self.is_metric = bool(self.params.get('IsMetric', return_default=True))
-      new_destination = str(self.params.get('MapboxRoute', return_default=True))
+      new_destination = str(self.params.get('MapboxRoute'))
       if new_destination != self.destination and new_destination != '':
         postvars = {'place_name': new_destination}
         postvars, valid_addr = self.mapbox.set_destination(postvars, self.last_position.longitude, self.last_position.latitude)
