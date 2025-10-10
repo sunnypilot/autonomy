@@ -57,8 +57,7 @@ class Navigationd:
       self.update_params()
 
       if self.last_position is not None:
-        progress = self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude)
-        if progress:
+        if progress:= self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude):
           self.upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
           self.current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
           self.current_instruction = progress['current_step']['instruction']
