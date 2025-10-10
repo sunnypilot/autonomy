@@ -24,7 +24,7 @@ class MapboxIntegration:
 
     token = self.get_public_token()
     query = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{quote(addr)}.json?access_token={token}&limit=1&proximity={current_lon},{current_lat}'
-    response = requests.get(query)
+    response = requests.get(query, timeout=10)
     if response.status_code == 200:
       features = response.json().get('features', [])
       if features:
@@ -82,7 +82,7 @@ class MapboxIntegration:
         'steps': 'true',
         'overview': 'full',
         'annotations': 'maxspeed'
-      }
+      }, timeout=10
     )
     data = response.json() if response.status_code == 200 else {}
     if data['code'] != 'Ok':  # status code 200 returns Ok, NoRoute, or NoSegment, we only want Ok responses
