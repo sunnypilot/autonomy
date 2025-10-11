@@ -39,6 +39,7 @@ class Navigationd:
 
   def update_params(self):
     if self.last_position is not None:
+      self.frame += 1
       if self.frame % 9 == 0:
         self.is_metric = bool(self.params.get('IsMetric', return_default=True))
         self.new_destination = str(self.params.get('MapboxRoute'))
@@ -60,7 +61,6 @@ class Navigationd:
           self.nav_instructions.clear_route_cache()
           self.route = self.nav_instructions.get_current_route()
           self.reroute_counter = 0
-      self.frame += 1
 
   def run(self):
     logging.warning('navigationd init')
