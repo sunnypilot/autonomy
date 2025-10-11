@@ -58,7 +58,7 @@ def test_memory_leak_submaster(capsys):
       msg.timestamp = int(publish_time * 1000000)  # microseconds
       msg.upcomingTurn = "left" if i % 4 == 0 else "none"
       msg.currentSpeedLimit = float(50 + (i % 10))
-      msg.currentInstruction = f"Continue for {100 + i % 100} meters"
+      msg.bannerInstructions = f"Continue for {100 + i % 100} meters"
       msg.distanceToNextTurn = float(100 + i % 200)
       msg.routeProgressPercent = float((i % 100))
       msg.distanceFromRoute = float(i % 50)
@@ -70,7 +70,7 @@ def test_memory_leak_submaster(capsys):
         _ = received.timestamp
         _ = received.upcomingTurn
         _ = received.currentSpeedLimit
-        _ = received.currentInstruction
+        _ = received.bannerInstructions
         _ = received.distanceToNextTurn
         _ = received.routeProgressPercent
         _ = received.distanceFromRoute
