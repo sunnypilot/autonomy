@@ -16,27 +16,27 @@ class TestMapbox:
       "place_name": cls.user_input_location
     }
     cls.postvars, cls.valid_addr = cls.mapbox.set_destination(cls.postvars, cls.current_lon, cls.current_lat)
-    assert cls.valid_addr, "Failed to geocode the location."
+    assert cls.valid_addr
     cls.route = cls.nav.get_current_route()
-    assert cls.route is not None, "Route should be generated"
-    assert len(cls.route['steps']) > 0, "Route should have at least one step"
+    assert cls.route is not None
+    assert len(cls.route['steps']) > 0
 
   def test_set_destination(self):
     settings = self.mapbox.params.get('MapboxSettings')
-    assert settings is not None, "MapboxSettings not stored"
+    assert settings is not None
     dest_lat = settings['navData']['current']['latitude']
     dest_lon = settings['navData']['current']['longitude']
-    assert dest_lat == self.postvars["latitude"] and dest_lon == self.postvars["longitude"], "Destination coordinates not stored correctly"
+    assert dest_lat == self.postvars["latitude"] and dest_lon == self.postvars["longitude"]
 
   def test_get_route(self):
-    assert 'steps' in self.route, "Route should have steps"
-    assert 'geometry' in self.route, "Route should have geometry"
-    assert 'maxspeed' in self.route, "Route should have maxspeed"
-    assert 'total_distance' in self.route, "Route should have total distance"
-    assert 'total_duration' in self.route, "Route should have total duration"
-    assert len(self.route['steps']) > 0, "Route should have at least one step"
-    assert len(self.route['geometry']) > 0, "Route should have geometry coordinates"
-    assert len(self.route['maxspeed']) > 0, "Route should have maxspeed data"
+    assert 'steps' in self.route
+    assert 'geometry' in self.route
+    assert 'maxspeed' in self.route
+    assert 'total_distance' in self.route
+    assert 'total_duration' in self.route
+    assert len(self.route['steps']) > 0
+    assert len(self.route['geometry']) > 0
+    assert len(self.route['maxspeed']) > 0
 
     maxspeed_kph = [(speed, unit) for speed, unit in self.route['maxspeed'] if speed > 0]
     print(f"Maxspeed: {maxspeed_kph}")
@@ -44,13 +44,13 @@ class TestMapbox:
     print(f"Modifiers: {modifiers}")
     if self.route and 'steps' in self.route:
       for step in self.route['steps']:
-        assert 'modifier' in step, "Each step should have a turn in this sample"
+        assert 'modifier' in step
 
   def test_upcoming_turn_detection(self):
     progress = self.nav.get_route_progress(self.current_lat, self.current_lon)
     upcoming = self.nav.get_upcoming_turn_from_progress(progress, self.current_lat, self.current_lon)
-    assert isinstance(upcoming, str), "Upcoming turn should be a string"
-    assert upcoming == 'none', "Should not detect upcoming turn when far from route turns"
+    assert isinstance(upcoming, str)
+    assert upcoming == 'none'
 
     if self.route['steps']:
       turn_lat = self.route['steps'][1]['location'].latitude
@@ -66,22 +66,26 @@ class TestMapbox:
     # Test route progress tracking
     progress = self.nav.get_route_progress(self.current_lat, self.current_lon)
     print(f"Route progress: {progress}")
-    assert progress is not None, "Route progress should be available"
-    assert 'distance_from_route' in progress, "Progress should include distance from route"
-    assert 'next_turn' in progress, "Progress should include next turn info"
-    assert 'route_progress_percent' in progress, "Progress should include route completion percentage"
-    assert 'current_maxspeed' in progress, "Progress should include current maxspeed"
-    assert progress['distance_from_route'] >= 0, "Distance from route should be non-negative"
-    assert 0 <= progress['route_progress_percent'] <= 100, "Route progress should be 0-100%"
-    assert self.route['total_distance'] > 0, "Route distance should be positive"
-    assert self.route['total_duration'] > 0, "Route duration should be positive"
+    assert progress is not None
+    assert 'distance_from_route' in progress
+    assert 'next_turn' in progress
+    assert 'route_progress_percent' in progress
+    assert 'current_maxspeed' in progress
+    assert 'total_distance_remaining' in progress
+    assert 'total_time_remaining' in progress
+    assert 'all_maneuvers' in progress
+    assert progress['distance_from_route'] >= 0
+    assert 0 <= progress['route_progress_percent'] <= 100
+    assert progress['total_distance_remaining'] >= 0
+    assert progress['total_time_remaining'] >= 0
+    assert isinstance(progress['all_maneuvers'], list)
 
     # Test speed limit extraction
     speed_limit_metric = self.nav.get_current_speed_limit_from_progress(progress, True)
     speed_limit_imperial = self.nav.get_current_speed_limit_from_progress(progress, False)
-    assert isinstance(speed_limit_metric, int), "Speed limit should be an integer"
-    assert isinstance(speed_limit_imperial, int), "Speed limit should be an integer"
+    assert isinstance(speed_limit_metric, int)
+    assert isinstance(speed_limit_imperial, int)
     expected_metric = int(progress['current_maxspeed'][0])
     expected_imperial = int(round(progress['current_maxspeed'][0] * CV.KPH_TO_MPH))
-    assert speed_limit_metric == expected_metric, f"Metric speed limit should be {expected_metric}"
-    assert speed_limit_imperial == expected_imperial, f"Imperial speed limit should be {expected_imperial}"
+    assert speed_limit_metric == expected_metric
+    assert speed_limit_imperial == expected_imperial

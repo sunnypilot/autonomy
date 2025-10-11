@@ -13,9 +13,9 @@ class MapboxIntegration:
     token = str(self.params.get('MapboxToken', return_default=True))
     return token
 
-  def set_destination(self, postvars, current_lon, current_lat) -> tuple[dict, bool]:
+  def set_destination(self, postvars, current_lon, current_lat, bearing=None) -> tuple[dict, bool]:
     if 'latitude' in postvars and 'longitude' in postvars:
-      self.nav_confirmed(postvars, current_lon, current_lat)
+      self.nav_confirmed(postvars, current_lon, current_lat, bearing)
       return postvars, True
 
     addr = postvars.get('place_name')
@@ -30,11 +30,11 @@ class MapboxIntegration:
       if features:
         longitude, latitude = features[0]['geometry']['coordinates']
         postvars.update({'latitude': latitude, 'longitude': longitude, 'name': addr})
-        self.nav_confirmed(postvars, current_lon, current_lat)
+        self.nav_confirmed(postvars, current_lon, current_lat, bearing)
         return postvars, True
     return postvars, False
 
-  def nav_confirmed(self, postvars, start_lon, start_lat) -> None:
+  def nav_confirmed(self, postvars, start_lon, start_lat, bearing=None) -> None:
     if not postvars:
       return
 
@@ -49,7 +49,7 @@ class MapboxIntegration:
     }
 
     token = self.get_public_token()
-    route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token)
+    route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token, bearing)
     if route_data:
       data['navData']['route'] = {
         'steps': [
@@ -60,6 +60,7 @@ class MapboxIntegration:
             'duration': step['duration'],
             'location': {'latitude': step['location'].latitude, 'longitude': step['location'].longitude},
             'modifier': step['modifier'],
+            'bannerInstructions': step['bannerInstructions'],
           }
           for step in route_data['steps']
         ],
@@ -70,19 +71,24 @@ class MapboxIntegration:
       }
     self.params.put('MapboxSettings', data)
 
-  def generate_route(self, start_lon, start_lat, end_lon, end_lat, token) -> dict | None:
+  def generate_route(self, start_lon, start_lat, end_lon, end_lat, token, bearing=None) -> dict | None:
     if not token:
       return None
 
+    params = {
+      'access_token': token,
+      'geometries': 'geojson',
+      'steps': 'true',
+      'overview': 'full',
+      'annotations': 'maxspeed',
+      'banner_instructions': 'true'
+    }
+    if bearing is not None:
+      params['bearings'] = f'{int((bearing + 360) % 360):.0f},90;'
+
     response = requests.get(
       f'https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}',
-      params={
-        'access_token': token,
-        'geometries': 'geojson',
-        'steps': 'true',
-        'overview': 'full',
-        'annotations': 'maxspeed'
-      }, timeout=10
+      params=params, timeout=10
     )
     data = response.json() if response.status_code == 200 else {}
     if data['code'] != 'Ok':  # status code 200 returns Ok, NoRoute, or NoSegment, we only want Ok responses
@@ -104,6 +110,7 @@ class MapboxIntegration:
         'duration': step['duration'],
         'location': Coordinate.from_mapbox_tuple(tuple(step['maneuver']['location'])),
         'modifier': step['maneuver'].get('modifier', 'none'),
+        'bannerInstructions': step['bannerInstructions'],
       }
       for step in leg['steps']
     ]

@@ -36,7 +36,32 @@ class NavigationInstructions:
 
     distance_to_end_of_step = max(0, current_step['distance'] - (closest_cumulative - current_step['cumulative_distance'])) if current_step else None
 
-    return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn, 'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100, 'current_maxspeed': current_maxspeed, 'distance_to_end_of_step': distance_to_end_of_step}
+    # Calculate total remaining distance and time
+    total_distance_remaining: float = max(0, route['total_distance'] - closest_cumulative)
+    total_time_remaining: float = 0.0
+    if current_step:
+      remaining_in_step = (closest_cumulative - current_step['cumulative_distance']) / max(1, current_step['distance']) * current_step['duration']
+      total_time_remaining = current_step['duration'] - remaining_in_step
+      for step in route['steps'][current_step_index + 1:]:
+        total_time_remaining += step['duration']
+
+    all_maneuvers: list = []
+    for idx in range(current_step_index, len(route['steps'])):
+      step = route['steps'][idx]
+      if idx == current_step_index:
+        distance = distance_to_end_of_step
+      else:
+        distance = sum(route['steps'][j]['distance'] for j in range(current_step_index + 1, idx + 1))
+      all_maneuvers.append({
+        'distance': distance,
+        'type': step['maneuver'],
+        'modifier': step['modifier']
+      })
+
+    return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn,
+            'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100,
+            'current_maxspeed': current_maxspeed, 'distance_to_end_of_step': distance_to_end_of_step, 'total_distance_remaining': total_distance_remaining,
+            'total_time_remaining': total_time_remaining, 'all_maneuvers': all_maneuvers, 'current_step_index': current_step_index}
 
   def get_current_route(self):
     if self._route_loaded and self._cached_route is not None:
@@ -60,7 +85,7 @@ class NavigationInstructions:
       closest_index = min(range(len(geometry)), key=lambda i: location.distance_to(Coordinate(geometry[i][1], geometry[i][0])))
       cumulative_distance = cumulative_distances[closest_index]
       steps.append({
-        'instruction': step['instruction'],
+        'bannerInstructions': step['bannerInstructions'],
         'distance': step['distance'],
         'duration': step['duration'],
         'maneuver': step['maneuver'],
