@@ -1,7 +1,7 @@
 import os
 import time
 
-from navigation.common.params.params import Params
+from common.params.params import Params
 
 
 class TestParams:
