@@ -44,7 +44,7 @@ class NavigationInstructions:
     if current_step:
       progress_in_step = (closest_cumulative - current_step['cumulative_distance']) / current_step['distance']
       time_left_in_step = (1 - progress_in_step) * current_step['duration']
-      total_time_remaining = time_left_in_step + sum(step['duration'] for step in route['steps'][current_step_index + 1:])
+      total_time_remaining = time_left_in_step + sum(step['duration'] for step in route['steps'][current_step_index + 1 :])
 
     all_maneuvers: list = []
     for idx in range(current_step_index, len(route['steps'])):
