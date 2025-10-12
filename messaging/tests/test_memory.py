@@ -37,7 +37,7 @@ def analyze_memory_stats(stats_str):
   return {
     'total_allocations': len(allocations),
     'top_allocation': max(allocations, key=lambda x: x[0]) if allocations else (0, 0, ''),
-    'allocations': allocations
+    'allocations': allocations,
   }
 
 
@@ -50,7 +50,7 @@ def test_memory_leak_submaster(capsys):
   try:
     pub = messenger.PubMaster("navigationd")
     sub = messenger.SubMaster("navigationd")
-    time.sleep(.01)
+    time.sleep(0.01)
     latencies = []
     prev_timestamp = 0.0
 
@@ -102,14 +102,13 @@ def test_memory_leak_submaster(capsys):
     assert stats_analysis['total_allocations'] > 0, "No memory allocations found"
 
     top_size, _, top_line = stats_analysis['top_allocation']
-    assert top_size < 256 * 1024, f"Excessive allocation: {top_size/1024:.1f} KiB in {top_line}"
+    assert top_size < 256 * 1024, f"Excessive allocation: {top_size / 1024:.1f} KiB in {top_line}"
 
-    messenger_allocations = [allocation for allocation in stats_analysis['allocations'] 
-                            if 'messenger.py' in allocation[2]]
+    messenger_allocations = [allocation for allocation in stats_analysis['allocations'] if 'messenger.py' in allocation[2]]
 
     if messenger_allocations:
       total_messenger_size = sum(allocation[0] for allocation in messenger_allocations)
-      assert total_messenger_size < 50 * 1024, f"Messenger memory usage too high: {total_messenger_size/1024:.1f} KiB"
+      assert total_messenger_size < 50 * 1024, f"Messenger memory usage too high: {total_messenger_size / 1024:.1f} KiB"
 
       for size, count, line in messenger_allocations:
         if size < 1024:  # Small allocations

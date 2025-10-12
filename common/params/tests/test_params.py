@@ -14,7 +14,7 @@ class TestParams:
     for key in test_keys:
       file_path = os.path.join(self.params.params_dir, key)
       if os.path.exists(file_path):
-          os.remove(file_path)
+        os.remove(file_path)
 
   def test_get_existing_key(self):
     self.params.put("key", "value")
@@ -70,7 +70,7 @@ class TestParams:
     self.params.put_nonblocking("key", ['new', 'value'])
     time.sleep(0.02)
     assert self.params.get("key") == "['new', 'value']"
-   
+
   def test_json_serialization(self):
     data = {"a": 1, "b": [1, 2, 3], "c": {"nested": "dict"}}
     self.params.put("json_key", data)

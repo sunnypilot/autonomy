@@ -23,7 +23,7 @@ def test_manager_submaster_integration():
           print(f"Received message from {name}: {msg}")
       time.sleep(0.1)
 
-    navigationd_messages = [msg for name, msg in messages_received if name == 'navigationd']   # Check that messages were received
+    navigationd_messages = [msg for name, msg in messages_received if name == 'navigationd']  # Check that messages were received
     assert len(navigationd_messages) > 0, f"No messages found for navigationd. All messages: {messages_received}"
 
   finally:
