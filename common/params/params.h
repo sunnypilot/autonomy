@@ -24,8 +24,9 @@ const std::unordered_map<std::string, KeyInfo> KEYS = {
   // default keys
   {"MapboxToken", {ParamKeyType::STRING, ""}},
   {"IsMetric", {ParamKeyType::BOOL, "0"}},
-  {"MapboxSettings", {ParamKeyType::BYTES}},
+  {"MapboxSettings", {ParamKeyType::JSON, "{}"}},
   {"MapboxRoute", {ParamKeyType::STRING, ""}},
+  {"MapboxRecompute", {ParamKeyType::BOOL, "0"}},
 
 
   // CI test keys

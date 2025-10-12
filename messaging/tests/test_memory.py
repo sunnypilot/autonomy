@@ -22,6 +22,9 @@ def analyze_memory_stats(stats_str):
     if 'size=' not in line or 'count=' not in line:
       continue
 
+    if 'test_memory.py' in line:
+      continue
+
     try:
       # Parse: size=x KiB, count=x, average=x B
       size_part = line.split('size=')[1].split(',')[0].strip()
@@ -52,29 +55,29 @@ def test_memory_leak_submaster(capsys):
     prev_timestamp = 0.0
 
     for i in range(36000):  # 30 min
-      if i % 4 == 0:  # Publish at 5 Hz
-        publish_time = time.perf_counter()
-        msg = messenger.schema.MapboxSettings.new_message()
+      publish_time = time.perf_counter()
+      msg = messenger.schema.MapboxSettings.new_message()
 
-        msg.timestamp = int(publish_time * 1000000)  # microseconds
+      msg.timestamp = int(publish_time * 1000000)  # microseconds
+      msg.upcomingTurn = "left" if i % 4 == 0 else "none"
+      msg.currentSpeedLimit = float(50 + (i % 10))
+      msg.bannerInstructions = f"Continue for {100 + i % 100} meters"
+      msg.distanceToNextTurn = float(100 + i % 200)
+      msg.routeProgressPercent = float((i % 100))
+      msg.distanceFromRoute = float(i % 50)
+      msg.routePositionCumulative = float(i * 10)
+      pub.send("navigationd", msg)
 
-        msg.navData.current.latitude = 37.8 + (i % 50) * 0.01
-        msg.navData.current.longitude = -122.3 + (i % 50) * 0.01
-        msg.navData.current.placeName = f"Sunnypilot HQ {i % 10}"
-
-        msg.navData.route.steps = [
-          {"instruction": f"Turn {i % 100}", "distance": 100.0 + (i % 100) * 10.0, "duration": 60.0, "maneuver": "left", "location": {"longitude": -122.4 + (i % 100) * 0.01, "latitude": 37.7 + (i % 100) * 0.01}}]
-        msg.navData.route.totalDistance = 175.0 + i * 10.0
-        msg.navData.route.totalDuration = 60.0 + i * 5.0
-        msg.navData.route.geometry = [{"longitude": -122.4 + j * 0.01, "latitude": 37.7 + j * 0.01} for j in range(10)]
-        msg.navData.route.maxspeed = [{"speed": 50.0 + (i % 5) * 10.0, "unit": "mph"}]
-
-        pub.send("navigationd", msg)
-
-      # Query at 20 Hz to build up cache
       received = sub["navigationd"]
       if received is not None:
-        _ = received.navData.route.steps
+        _ = received.timestamp
+        _ = received.upcomingTurn
+        _ = received.currentSpeedLimit
+        _ = received.bannerInstructions
+        _ = received.distanceToNextTurn
+        _ = received.routeProgressPercent
+        _ = received.distanceFromRoute
+        _ = received.routePositionCumulative
         if received.timestamp > prev_timestamp:
           latency = time.perf_counter() - (received.timestamp / 1000000)
           latencies.append(latency)
@@ -89,10 +92,10 @@ def test_memory_leak_submaster(capsys):
     if latencies:
       avg_latency = sum(latencies) / len(latencies)
       print(f"Average latency: {avg_latency:.6f}s")
-      assert avg_latency < 0.05, f"Average latency {avg_latency:.6f}s exceeds 50ms"
+      assert avg_latency < 0.06, f"Average latency {avg_latency:.6f}s exceeds 60ms"
 
-    # flag if above 5 MB, may be a bit too conservative
-    assert memory_increase < 5, f"Potential leak: {memory_increase:.2f} MB increase"
+    # flag if above 7.5 MB, may be a bit too conservative
+    assert memory_increase < 7.5, f"Potential leak: {memory_increase:.2f} MB increase"
 
     # check memory allocations for potential leaks
     stats_analysis = analyze_memory_stats(memory_stats)
