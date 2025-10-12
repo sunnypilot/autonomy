@@ -12,9 +12,7 @@ class TestMapbox:
     # setup route
     cls.current_lon, cls.current_lat = -119.17557, 34.23305
     cls.user_input_location = "740 E Ventura Blvd. Camarillo, CA"
-    cls.postvars = {
-      "place_name": cls.user_input_location
-    }
+    cls.postvars = {"place_name": cls.user_input_location}
     cls.postvars, cls.valid_addr = cls.mapbox.set_destination(cls.postvars, cls.current_lon, cls.current_lat)
     assert cls.valid_addr
     cls.route = cls.nav.get_current_route()

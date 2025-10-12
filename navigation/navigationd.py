@@ -18,7 +18,7 @@ class Navigationd:
     self.sm = messenger.SubMaster('livelocationd')
     self.pm = messenger.PubMaster('navigationd')
 
-    self.route: object | None = None
+    self.route = None
     self.destination: str | None = None
     self.new_destination: str = ''
 
@@ -47,8 +47,9 @@ class Navigationd:
         self.new_destination = self.params.get('MapboxRoute')
         self.recompute_allowed = self.params.get('MapboxRecompute', return_default=True)
 
-      self.allow_recompute: bool = ((self.new_destination != self.destination and self.new_destination != '') or
-                                    (self.recompute_allowed and self.reroute_counter > 3 and self.route))
+      self.allow_recompute: bool = (self.new_destination != self.destination and self.new_destination != '') or (
+        self.recompute_allowed and self.reroute_counter > 3 and self.route
+      )
 
       if self.allow_recompute:
         postvars = {'place_name': self.new_destination}

@@ -20,7 +20,9 @@ class NavigationInstructions:
     self.coord.longitude = current_lon
 
     # Find closest point on the route polyline
-    closest_index, min_distance = min(((i, self.coord.distance_to(Coordinate(latitude, longitude))) for i, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1])
+    closest_index, min_distance = min(
+      ((i, self.coord.distance_to(Coordinate(latitude, longitude))) for i, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1]
+    )
     closest_cumulative = route['cumulative_distances'][closest_index]
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
@@ -42,7 +44,7 @@ class NavigationInstructions:
     if current_step:
       remaining_in_step = (closest_cumulative - current_step['cumulative_distance']) / max(1, current_step['distance']) * current_step['duration']
       total_time_remaining = current_step['duration'] - remaining_in_step
-      for step in route['steps'][current_step_index + 1:]:
+      for step in route['steps'][current_step_index + 1 :]:
         total_time_remaining += step['duration']
 
     all_maneuvers: list = []
@@ -52,16 +54,22 @@ class NavigationInstructions:
         distance = distance_to_end_of_step
       else:
         distance = sum(route['steps'][j]['distance'] for j in range(current_step_index + 1, idx + 1))
-      all_maneuvers.append({
-        'distance': distance,
-        'type': step['maneuver'],
-        'modifier': step['modifier']
-      })
+      all_maneuvers.append({'distance': distance, 'type': step['maneuver'], 'modifier': step['modifier']})
 
-    return {'distance_from_route': min_distance, 'route_position_cumulative': closest_cumulative, 'current_step': current_step, 'next_turn': next_turn,
-            'distance_to_next_turn': next_turn_distance, 'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100,
-            'current_maxspeed': current_maxspeed, 'distance_to_end_of_step': distance_to_end_of_step, 'total_distance_remaining': total_distance_remaining,
-            'total_time_remaining': total_time_remaining, 'all_maneuvers': all_maneuvers, 'current_step_index': current_step_index}
+    return {
+      'distance_from_route': min_distance,
+      'route_position_cumulative': closest_cumulative,
+      'current_step': current_step,
+      'next_turn': next_turn,
+      'distance_to_next_turn': next_turn_distance,
+      'route_progress_percent': (closest_cumulative / max(1, route['total_distance'])) * 100,
+      'current_maxspeed': current_maxspeed,
+      'distance_to_end_of_step': distance_to_end_of_step,
+      'total_distance_remaining': total_distance_remaining,
+      'total_time_remaining': total_time_remaining,
+      'all_maneuvers': all_maneuvers,
+      'current_step_index': current_step_index,
+    }
 
   def get_current_route(self):
     if self._route_loaded and self._cached_route is not None:
@@ -78,7 +86,10 @@ class NavigationInstructions:
 
     geometry = [(coord['longitude'], coord['latitude']) for coord in route['geometry']]
     cumulative_distances = [0.0]
-    cumulative_distances.extend(cumulative_distances[-1] + Coordinate(geometry[j-1][1], geometry[j-1][0]).distance_to(Coordinate(geometry[j][1], geometry[j][0])) for j in range(1, len(geometry)))
+    cumulative_distances.extend(
+      cumulative_distances[-1] + Coordinate(geometry[j - 1][1], geometry[j - 1][0]).distance_to(Coordinate(geometry[j][1], geometry[j][0]))
+      for j in range(1, len(geometry))
+    )
     maxspeed = [(ms['speed'], ms['unit']) for ms in route['maxspeed']]
     for step in route['steps']:
       location = Coordinate(step['location']['latitude'], step['location']['longitude'])
@@ -92,9 +103,16 @@ class NavigationInstructions:
         'location': location,
         'cumulative_distance': cumulative_distance,
         'maxspeed': maxspeed[closest_index] if closest_index < len(maxspeed) else None,
-        'modifier': string_to_direction(step['modifier'])
+        'modifier': string_to_direction(step['modifier']),
       })
-    self._cached_route = {'steps': steps, 'total_distance': route['totalDistance'], 'total_duration': route['totalDuration'], 'geometry': geometry, 'cumulative_distances': cumulative_distances, 'maxspeed': maxspeed}
+    self._cached_route = {
+      'steps': steps,
+      'total_distance': route['totalDistance'],
+      'total_duration': route['totalDuration'],
+      'geometry': geometry,
+      'cumulative_distances': cumulative_distances,
+      'maxspeed': maxspeed,
+    }
     self._route_loaded = True
     return self._cached_route
 

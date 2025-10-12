@@ -41,12 +41,7 @@ class MapboxIntegration:
     latitude = float(postvars['latitude'])
     longitude = float(postvars['longitude'])
 
-    data: dict = {
-      'navData': {
-        'current': {'latitude': latitude, 'longitude': longitude},
-        'route': {}
-      }
-    }
+    data: dict = {'navData': {'current': {'latitude': latitude, 'longitude': longitude}, 'route': {}}}
 
     token = self.get_public_token()
     route_data = self.generate_route(start_lon, start_lat, longitude, latitude, token, bearing)
@@ -67,7 +62,7 @@ class MapboxIntegration:
         'totalDistance': route_data['total_distance'],
         'totalDuration': route_data['total_duration'],
         'geometry': [{'longitude': coord[0], 'latitude': coord[1]} for coord in route_data['geometry']],
-        'maxspeed': route_data['maxspeed']
+        'maxspeed': route_data['maxspeed'],
       }
     self.params.put('MapboxSettings', data)
 
@@ -75,21 +70,11 @@ class MapboxIntegration:
     if not token:
       return None
 
-    params = {
-      'access_token': token,
-      'geometries': 'geojson',
-      'steps': 'true',
-      'overview': 'full',
-      'annotations': 'maxspeed',
-      'banner_instructions': 'true'
-    }
+    params = {'access_token': token, 'geometries': 'geojson', 'steps': 'true', 'overview': 'full', 'annotations': 'maxspeed', 'banner_instructions': 'true'}
     if bearing is not None:
       params['bearings'] = f'{int((bearing + 360) % 360):.0f},90;'
 
-    response = requests.get(
-      f'https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}',
-      params=params, timeout=10
-    )
+    response = requests.get(f'https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}', params=params, timeout=10)
     data = response.json() if response.status_code == 200 else {}
     if data['code'] != 'Ok':  # status code 200 returns Ok, NoRoute, or NoSegment, we only want Ok responses
       return None
@@ -115,15 +100,12 @@ class MapboxIntegration:
       for step in leg['steps']
     ]
 
-    maxspeed = [
-      {'speed': item['speed'], 'unit': item['unit']}
-      for item in leg['annotation']['maxspeed'] if 'speed' in item
-    ]
+    maxspeed = [{'speed': item['speed'], 'unit': item['unit']} for item in leg['annotation']['maxspeed'] if 'speed' in item]
 
     return {
       'steps': steps,
       'total_distance': route['distance'],
       'total_duration': route['duration'],
       'geometry': route['geometry']['coordinates'],
-      'maxspeed': maxspeed
+      'maxspeed': maxspeed,
     }
