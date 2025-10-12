@@ -27,11 +27,11 @@ class NavigationInstructions:
 
     # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
     current_step_index = max((i for i, step in enumerate(route['steps']) if step['cumulative_distance'] <= closest_cumulative), default=-1)
-    current_step = route['steps'][current_step_index] if current_step_index >= 0 else (route['steps'][0] if route['steps'] else None)
+    current_step = route['steps'][current_step_index if current_step_index >= 0 else 0] if route['steps'] else None
 
     # Next turn is the next step after current
     next_turn_index = current_step_index + 1
-    next_turn = route['steps'][next_turn_index] if next_turn_index < len(route['steps']) else None
+    next_turn = route['steps'][next_turn_index] if 0 <= next_turn_index < len(route['steps']) else None
     next_turn_distance = max(0, next_turn['cumulative_distance'] - closest_cumulative) if next_turn else None
 
     current_maxspeed = current_step['maxspeed'] if current_step else None
@@ -76,10 +76,7 @@ class NavigationInstructions:
       return self._cached_route
 
     param_value = self.params.get('MapboxSettings')
-    try:
-      route = param_value.get('navData', {}).get('route')
-    except (AttributeError, KeyError):
-      route = None
+    route = param_value['navData']['route'] if param_value else None
     if not route:
       return None
     steps = []
@@ -91,17 +88,17 @@ class NavigationInstructions:
       for j in range(1, len(geometry))
     )
     maxspeed = [(ms['speed'], ms['unit']) for ms in route['maxspeed']]
+    steps = []
     for step in route['steps']:
       location = Coordinate(step['location']['latitude'], step['location']['longitude'])
       closest_index = min(range(len(geometry)), key=lambda i: location.distance_to(Coordinate(geometry[i][1], geometry[i][0])))
-      cumulative_distance = cumulative_distances[closest_index]
       steps.append({
         'bannerInstructions': step['bannerInstructions'],
         'distance': step['distance'],
         'duration': step['duration'],
         'maneuver': step['maneuver'],
         'location': location,
-        'cumulative_distance': cumulative_distance,
+        'cumulative_distance': cumulative_distances[closest_index],
         'maxspeed': maxspeed[closest_index] if closest_index < len(maxspeed) else None,
         'modifier': string_to_direction(step['modifier']),
       })
