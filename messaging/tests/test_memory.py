@@ -22,6 +22,9 @@ def analyze_memory_stats(stats_str):
     if 'size=' not in line or 'count=' not in line:
       continue
 
+    if 'test_memory.py' in line:
+      continue
+
     try:
       # Parse: size=x KiB, count=x, average=x B
       size_part = line.split('size=')[1].split(',')[0].strip()
