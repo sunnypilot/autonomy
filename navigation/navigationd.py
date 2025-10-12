@@ -31,14 +31,6 @@ class Navigationd:
     self.last_bearing: float | None = None
     self.is_metric: bool = False
 
-    self.upcoming_turn: str = 'none'
-    self.current_speed_limit: int = 0
-    self.distance_to_next_turn: float = 0.0
-    self.distance_to_end_of_step: float = 0.0
-    self.route_progress_percent: float = 0.0
-    self.distance_from_route: float = 0.0
-    self.route_position_cumulative: float = 0.0
-
   def update_params(self):
     if self.last_position is not None:
       self.frame += 1
@@ -61,24 +53,25 @@ class Navigationd:
           self.route = self.nav_instructions.get_current_route()
           self.reroute_counter = 0
 
-  def _update_navigation(self) -> tuple[str, dict | None]:
+  def _update_navigation(self) -> tuple[str, dict | None, dict]:
     banner_instructions: str = ''
     progress: dict | None = None
+    nav_data: dict = {}
     if self.last_position is not None:
       if progress := self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude):
-        self.upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
-        self.current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
+        nav_data['upcoming_turn'] = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
+        nav_data['current_speed_limit'] = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
 
         if progress['current_step']:
           parsed = parse_banner_instructions(progress['current_step']['bannerInstructions'], progress['distance_to_end_of_step'])
           if parsed:
             banner_instructions = parsed['maneuverPrimaryText']
 
-        self.distance_to_next_turn = progress['distance_to_next_turn']
-        self.distance_to_end_of_step = progress['distance_to_end_of_step']
-        self.route_progress_percent = progress['route_progress_percent']
-        self.distance_from_route = progress['distance_from_route']
-        self.route_position_cumulative = progress['route_position_cumulative']
+        nav_data['distance_to_next_turn'] = progress['distance_to_next_turn']
+        nav_data['distance_to_end_of_step'] = progress['distance_to_end_of_step']
+        nav_data['route_progress_percent'] = progress['route_progress_percent']
+        nav_data['distance_from_route'] = progress['distance_from_route']
+        nav_data['route_position_cumulative'] = progress['route_position_cumulative']
 
         # Don't recompute in last segment to prevent reroute loops
         if self.route:
@@ -86,10 +79,33 @@ class Navigationd:
             self.allow_recompute = False
 
         if self.recompute_allowed:
-          self.reroute_counter += 1 if self.distance_from_route > 25 else 0
-          logging.debug(f'Reroute counter: {self.reroute_counter}, distance: {self.distance_from_route}')
+          self.reroute_counter += 1 if nav_data['distance_from_route'] > 25 else 0
+          logging.debug(f'Reroute counter: {self.reroute_counter}, distance: {nav_data["distance_from_route"]}')
 
-    return banner_instructions, progress
+    return banner_instructions, progress, nav_data
+
+  def _build_navigation_message(self, banner_instructions, progress, nav_data):
+    msg = messenger.schema.MapboxSettings.new_message()
+    msg.timestamp = int(time.monotonic() * 1000)
+    msg.upcomingTurn = nav_data.get('upcoming_turn', 'none')
+    msg.currentSpeedLimit = nav_data.get('current_speed_limit', 0)
+    msg.bannerInstructions = banner_instructions
+    msg.distanceToNextTurn = nav_data.get('distance_to_next_turn', 0.0)
+    msg.distanceToEndOfStep = nav_data.get('distance_to_end_of_step', 0.0)
+    msg.routeProgressPercent = nav_data.get('route_progress_percent', 0.0)
+    msg.distanceFromRoute = nav_data.get('distance_from_route', 0.0)
+    msg.routePositionCumulative = nav_data.get('route_position_cumulative', 0.0)
+    msg.totalDistanceRemaining = progress['total_distance_remaining'] if progress else 0.0
+    msg.totalTimeRemaining = progress['total_time_remaining'] if progress else 0.0
+
+    all_maneuvers = (
+      [messenger.schema.Maneuver.new_message(distance=m['distance'], type=m['type'], modifier=m['modifier']) for m in progress['all_maneuvers']]
+      if progress
+      else []
+    )
+    msg.allManeuvers = all_maneuvers
+
+    return msg
 
   def run(self):
     logging.warning('navigationd init')
@@ -102,27 +118,9 @@ class Navigationd:
           self.last_bearing = math.degrees(gps_msg.calibratedOrientationNED.value[2])
 
       self.update_params()
-      banner_instructions, progress = self._update_navigation()
+      banner_instructions, progress, nav_data = self._update_navigation()
 
-      msg = messenger.schema.MapboxSettings.new_message()
-      msg.timestamp = int(time.monotonic() * 1000)
-      msg.upcomingTurn = self.upcoming_turn
-      msg.currentSpeedLimit = self.current_speed_limit
-      msg.bannerInstructions = banner_instructions
-      msg.distanceToNextTurn = self.distance_to_next_turn
-      msg.distanceToEndOfStep = self.distance_to_end_of_step
-      msg.routeProgressPercent = self.route_progress_percent
-      msg.distanceFromRoute = self.distance_from_route
-      msg.routePositionCumulative = self.route_position_cumulative
-      msg.totalDistanceRemaining = progress['total_distance_remaining'] if progress else 0.0
-      msg.totalTimeRemaining = progress['total_time_remaining'] if progress else 0.0
-
-      all_maneuvers: list = []
-      if progress:
-        for maneuver in progress['all_maneuvers']:
-          maneuver_msg = messenger.schema.Maneuver.new_message(distance=maneuver['distance'], type=maneuver['type'], modifier=maneuver['modifier'])
-          all_maneuvers.append(maneuver_msg)
-      msg.allManeuvers = all_maneuvers
+      msg = self._build_navigation_message(banner_instructions, progress, nav_data)
 
       self.pm.send('navigationd', msg)
       time.sleep(self.pm['navigationd'].rate_hz)
