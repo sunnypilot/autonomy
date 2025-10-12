@@ -38,6 +38,8 @@ class Livelocationd:
       self.lon += self.lon_increment
 
       time.sleep(self.pm['livelocationd'].rate_hz)
+
+
 def main():
   loc = Livelocationd()
   loc.run()
