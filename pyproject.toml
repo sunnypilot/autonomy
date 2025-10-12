@@ -85,3 +85,15 @@ addopts = "--ignore=mutants"
 paths_to_mutate = ["common", "messaging", "navigation", "system"]
 test_command = "pytest -x --tb=short"
 exclude = [".venv", ".venv/**", "/opt/venv", "/opt/venv/**", ".git", ".git/**"]
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E111", "E114"]
+
+[tool.ruff]
+preview = true
+indent-width = 2
+line-length = 160
+
+[tool.ruff.format]
+quote-style = "preserve"

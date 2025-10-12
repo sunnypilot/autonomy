@@ -6,11 +6,12 @@ import messaging.messenger as messenger
 
 
 class Livelocationd:
-  ''' Debug daemon to simulate live GPS updates.'''
+  '''Debug daemon to simulate live GPS updates.'''
+
   def __init__(self):
     self.pm = messenger.PubMaster('livelocationd')
 
-    # Initial coordinates set along a route navigating to a random house in CA that google picked: 580 Winchester Dr, Oxnard, CA. 
+    # Initial coordinates set along a route navigating to a random house in CA that google picked: 580 Winchester Dr, Oxnard, CA.
     self.lat = 34.2299
     self.lon = -119.1733
 
@@ -27,7 +28,7 @@ class Livelocationd:
       msg.positionGeodetic.value = [self.lat, self.lon]
       msg.positionGeodetic.std = [0.0, 0.0]
       msg.positionGeodetic.valid = True
-      
+
       msg.calibratedOrientationNED.value = [0.0, 0.0, self.bearing]  # roll, pitch, yaw (all I care about is yaw)
       msg.calibratedOrientationNED.std = [0.0, 0.0, 0.0]
       msg.calibratedOrientationNED.valid = True
