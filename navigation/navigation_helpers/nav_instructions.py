@@ -21,12 +21,12 @@ class NavigationInstructions:
 
     # Find closest point on the route polyline
     closest_index, min_distance = min(
-      ((i, self.coord.distance_to(Coordinate(latitude, longitude))) for i, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1]
+      ((index, self.coord.distance_to(Coordinate(latitude, longitude))) for index, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1]
     )
     closest_cumulative = route['cumulative_distances'][closest_index]
 
-    # Find the current step index: the highest i where the step location cumulative <= closest_cumulative
-    current_step_index = max((i for i, step in enumerate(route['steps']) if step['cumulative_distance'] <= closest_cumulative), default=-1)
+    # Find the current step index: the highest index where the step location cumulative <= closest_cumulative
+    current_step_index = max((index for index, step in enumerate(route['steps']) if step['cumulative_distance'] <= closest_cumulative), default=-1)
     current_step = route['steps'][current_step_index if current_step_index >= 0 else 0] if route['steps'] else None
 
     # Next turn is the next step after current
