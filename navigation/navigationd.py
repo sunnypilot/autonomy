@@ -3,7 +3,7 @@ import math
 import time
 
 import messaging.messenger as messenger
-from navigation.common.params.params import Params
+from common.params.params import Params
 from navigation.navd.helpers import Coordinate, parse_banner_instructions
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions

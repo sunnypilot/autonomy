@@ -1,7 +1,7 @@
 from urllib.parse import quote
 import requests
 
-from navigation.common.params.params import Params
+from common.params.params import Params
 from navigation.navd.helpers import Coordinate
 
 

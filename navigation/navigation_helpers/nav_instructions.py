@@ -1,4 +1,4 @@
-from navigation.common.params.params import Params
+from common.params.params import Params
 from navigation.common.constants import CV
 from navigation.navd.helpers import Coordinate, string_to_direction
 
