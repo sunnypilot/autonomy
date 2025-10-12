@@ -53,7 +53,7 @@ class TestMapbox:
     if self.route['steps']:
       turn_lat = self.route['steps'][1]['location'].latitude
       turn_lon = self.route['steps'][1]['location'].longitude
-      close_lat = turn_lat - 0.0003  # 30m before turn
+      close_lat = turn_lat - 0.0008  # 80 ish meters before turn
       if progress and progress.get('next_turn'):
         expected_turn = progress['next_turn']['modifier']
         upcoming_close = self.nav.get_upcoming_turn_from_progress(progress, close_lat, turn_lon)
