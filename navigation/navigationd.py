@@ -1,12 +1,12 @@
-import time
 import logging
 import math
+import time
 
 import messaging.messenger as messenger
-from navigation.navigation_helpers.nav_instructions import NavigationInstructions
-from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.common.params.params import Params
 from navigation.navd.helpers import Coordinate, parse_banner_instructions
+from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
+from navigation.navigation_helpers.nav_instructions import NavigationInstructions
 
 
 class Navigationd:
@@ -14,48 +14,46 @@ class Navigationd:
     self.params = Params()
     self.mapbox = MapboxIntegration()
     self.nav_instructions = NavigationInstructions()
+
     self.sm = messenger.SubMaster('livelocationd')
     self.pm = messenger.PubMaster('navigationd')
 
-    self.route = None
-    self.recompute_allowed = False
-    self.allow_recompute = False
-    self.destination = None
-    self.new_destination = ''
-    self.frame = -1
-    self.last_position = None
-    self.last_bearing = None
-    self.is_metric = False
+    self.route: object | None = None
+    self.destination: str | None = None
+    self.new_destination: str = ''
 
-    self.upcoming_turn = 'none'
-    self.current_speed_limit = 0
-    self.distance_to_next_turn = 0.0
-    self.distance_to_end_of_step = 0.0
-    self.route_progress_percent = 0.0
-    self.distance_from_route = 0.0
-    self.route_position_cumulative = 0.0
-    self.reroute_counter = 0
+    self.recompute_allowed: bool = False
+    self.allow_recompute: bool = False
+    self.reroute_counter: int = 0
 
+    self.frame: int = -1
+    self.last_position: Coordinate | None = None
+    self.last_bearing: float | None = None
+    self.is_metric: bool = False
+
+    self.upcoming_turn: str = 'none'
+    self.current_speed_limit: int = 0
+    self.distance_to_next_turn: float = 0.0
+    self.distance_to_end_of_step: float = 0.0
+    self.route_progress_percent: float = 0.0
+    self.distance_from_route: float = 0.0
+    self.route_position_cumulative: float = 0.0
 
   def update_params(self):
     if self.last_position is not None:
       self.frame += 1
       if self.frame % 9 == 0:
-        self.is_metric = bool(self.params.get('IsMetric', return_default=True))
-        self.new_destination = str(self.params.get('MapboxRoute'))
-        self.recompute_allowed = bool(self.params.get('MapboxRecompute', return_default=True))
+        self.is_metric = self.params.get('IsMetric', return_default=True)
+        self.new_destination = self.params.get('MapboxRoute')
+        self.recompute_allowed = self.params.get('MapboxRecompute', return_default=True)
 
-      if self.new_destination != self.destination and self.new_destination != '':
-        self.allow_recompute = True
-      elif self.recompute_allowed and self.reroute_counter > 3 and self.route:
-        self.allow_recompute = True
-      else:
-        self.allow_recompute = False
+      self.allow_recompute: bool = ((self.new_destination != self.destination and self.new_destination != '') or
+                              (self.recompute_allowed and self.reroute_counter > 3 and self.route))
 
       if self.allow_recompute:
         postvars = {'place_name': self.new_destination}
         postvars, valid_addr = self.mapbox.set_destination(postvars, self.last_position.longitude, self.last_position.latitude, self.last_bearing)
-        print(f'Set new destination to: {self.new_destination}, valid: {valid_addr}')  # debugging
+        logging.debug(f'Set new destination to: {self.new_destination}, valid: {valid_addr}')
         if valid_addr:
           self.destination = self.new_destination
           self.nav_instructions.clear_route_cache()
@@ -100,7 +98,7 @@ class Navigationd:
 
           if self.recompute_allowed:
             self.reroute_counter += 1 if self.distance_from_route > 25 else 0
-            print(f'Reroute counter: {self.reroute_counter}, distance: {self.distance_from_route}')  # debugging
+            logging.debug(f'Reroute counter: {self.reroute_counter}, distance: {self.distance_from_route}')
 
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)
@@ -121,5 +119,6 @@ class Navigationd:
 
 
 def main():
+  logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
   nav = Navigationd()
   nav.run()
