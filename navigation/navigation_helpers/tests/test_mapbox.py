@@ -36,8 +36,8 @@ class TestMapbox:
     assert len(self.route['geometry']) > 0
     assert len(self.route['maxspeed']) > 0
 
-    maxspeed_kph = [(speed, unit) for speed, unit in self.route['maxspeed'] if speed > 0]
-    print(f"Maxspeed: {maxspeed_kph}")
+    maxspeed = [(speed, unit) for speed, unit in self.route['maxspeed'] if speed > 0]
+    print(f"Maxspeed: {maxspeed}")
     modifiers = [step['modifier'] for step in self.route['steps']]
     print(f"Modifiers: {modifiers}")
     if self.route and 'steps' in self.route:
