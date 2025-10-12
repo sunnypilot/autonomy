@@ -48,7 +48,7 @@ class Navigationd:
         self.recompute_allowed = self.params.get('MapboxRecompute', return_default=True)
 
       self.allow_recompute: bool = ((self.new_destination != self.destination and self.new_destination != '') or
-                              (self.recompute_allowed and self.reroute_counter > 3 and self.route))
+                                    (self.recompute_allowed and self.reroute_counter > 3 and self.route))
 
       if self.allow_recompute:
         postvars = {'place_name': self.new_destination}
@@ -60,9 +60,38 @@ class Navigationd:
           self.route = self.nav_instructions.get_current_route()
           self.reroute_counter = 0
 
+  def _update_navigation(self) -> tuple[str, dict | None]:
+    banner_instructions: str = ''
+    progress: dict | None = None
+    if self.last_position is not None:
+      if progress := self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude):
+        self.upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
+        self.current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
+
+        if progress['current_step']:
+          parsed = parse_banner_instructions(progress['current_step']['bannerInstructions'], progress['distance_to_end_of_step'])
+          if parsed:
+            banner_instructions = parsed['maneuverPrimaryText']
+
+        self.distance_to_next_turn = progress['distance_to_next_turn']
+        self.distance_to_end_of_step = progress['distance_to_end_of_step']
+        self.route_progress_percent = progress['route_progress_percent']
+        self.distance_from_route = progress['distance_from_route']
+        self.route_position_cumulative = progress['route_position_cumulative']
+
+        # Don't recompute in last segment to prevent reroute loops
+        if self.route:
+          if progress['current_step_index'] == len(self.route['steps']) - 1:
+            self.allow_recompute = False
+
+        if self.recompute_allowed:
+          self.reroute_counter += 1 if self.distance_from_route > 25 else 0
+          logging.debug(f'Reroute counter: {self.reroute_counter}, distance: {self.distance_from_route}')
+
+    return banner_instructions, progress
+
   def run(self):
     logging.warning('navigationd init')
-
     while True:
       gps_msg = self.sm['livelocationd']
 
@@ -72,33 +101,7 @@ class Navigationd:
           self.last_bearing = math.degrees(gps_msg.calibratedOrientationNED.value[2])
 
       self.update_params()
-
-      banner_instructions = ''
-      progress = None
-      if self.last_position is not None:
-        if progress:= self.nav_instructions.get_route_progress(self.last_position.latitude, self.last_position.longitude):
-          self.upcoming_turn = self.nav_instructions.get_upcoming_turn_from_progress(progress, self.last_position.latitude, self.last_position.longitude)
-          self.current_speed_limit = self.nav_instructions.get_current_speed_limit_from_progress(progress, self.is_metric)
-
-          if progress['current_step']:
-            parsed = parse_banner_instructions(progress['current_step']['bannerInstructions'], progress['distance_to_end_of_step'])
-            if parsed:
-              banner_instructions = parsed['maneuverPrimaryText']
-
-          self.distance_to_next_turn = progress['distance_to_next_turn']
-          self.distance_to_end_of_step = progress.get('distance_to_end_of_step', 0.0)
-          self.route_progress_percent = progress['route_progress_percent']
-          self.distance_from_route = progress['distance_from_route']
-          self.route_position_cumulative = progress['route_position_cumulative']
-
-          # Don't recompute in last segment to prevent reroute loops
-          if self.route:
-            if progress['current_step_index'] == len(self.route['steps']) - 1:
-              self.allow_recompute = False
-
-          if self.recompute_allowed:
-            self.reroute_counter += 1 if self.distance_from_route > 25 else 0
-            logging.debug(f'Reroute counter: {self.reroute_counter}, distance: {self.distance_from_route}')
+      banner_instructions, progress = self._update_navigation()
 
       msg = messenger.schema.MapboxSettings.new_message()
       msg.timestamp = int(time.monotonic() * 1000)
@@ -110,10 +113,16 @@ class Navigationd:
       msg.routeProgressPercent = self.route_progress_percent
       msg.distanceFromRoute = self.distance_from_route
       msg.routePositionCumulative = self.route_position_cumulative
-      msg.totalDistanceRemaining = progress.get('total_distance_remaining', 0.0) if progress else 0.0
-      msg.totalTimeRemaining = progress.get('total_time_remaining', 0.0) if progress else 0.0
-      msg.allManeuvers = [messenger.schema.Maneuver.new_message(distance=m['distance'], type=m['type'], modifier=m['modifier']) for m in progress.get('all_maneuvers', [])] if progress else []
-      msg.speedLimitSign = 'mutcd'
+      msg.totalDistanceRemaining = progress['total_distance_remaining'] if progress else 0.0
+      msg.totalTimeRemaining = progress['total_time_remaining'] if progress else 0.0
+
+      all_maneuvers: list = []
+      if progress:
+        for maneuver in progress['all_maneuvers']:
+          maneuver_msg = messenger.schema.Maneuver.new_message(distance=maneuver['distance'], type=maneuver['type'], modifier=maneuver['modifier'])
+          all_maneuvers.append(maneuver_msg)
+      msg.allManeuvers = all_maneuvers
+
       self.pm.send('navigationd', msg)
       time.sleep(self.pm['navigationd'].rate_hz)
 

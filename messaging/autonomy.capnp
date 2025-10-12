@@ -14,7 +14,6 @@ struct MapboxSettings @0x8d30477844c72468 {
   totalDistanceRemaining @9 :Float64;
   totalTimeRemaining @10 :Float64;
   allManeuvers @11 :List(Maneuver);
-  speedLimitSign @12 :Text;
 }
 
 struct Maneuver @0xf1e434d0d6294b3b {
