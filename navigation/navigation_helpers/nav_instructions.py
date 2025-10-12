@@ -42,10 +42,9 @@ class NavigationInstructions:
     total_distance_remaining: float = max(0, route['total_distance'] - closest_cumulative)
     total_time_remaining: float = 0.0
     if current_step:
-      remaining_in_step = (closest_cumulative - current_step['cumulative_distance']) / max(1, current_step['distance']) * current_step['duration']
-      total_time_remaining = current_step['duration'] - remaining_in_step
-      for step in route['steps'][current_step_index + 1 :]:
-        total_time_remaining += step['duration']
+      progress_in_step = (closest_cumulative - current_step['cumulative_distance']) / current_step['distance']
+      time_left_in_step = (1 - progress_in_step) * current_step['duration']
+      total_time_remaining = time_left_in_step + sum(step['duration'] for step in route['steps'][current_step_index + 1:])
 
     all_maneuvers: list = []
     for idx in range(current_step_index, len(route['steps'])):
@@ -53,7 +52,7 @@ class NavigationInstructions:
       if idx == current_step_index:
         distance = distance_to_end_of_step
       else:
-        distance = sum(route['steps'][j]['distance'] for j in range(current_step_index + 1, idx + 1))
+        distance = distance_to_end_of_step + sum(route['steps'][step_idx]['distance'] for step_idx in range(current_step_index + 1, idx + 1))
       all_maneuvers.append({'distance': distance, 'type': step['maneuver'], 'modifier': step['modifier']})
 
     return {
@@ -84,8 +83,8 @@ class NavigationInstructions:
     geometry = [(coord['longitude'], coord['latitude']) for coord in route['geometry']]
     cumulative_distances = [0.0]
     cumulative_distances.extend(
-      cumulative_distances[-1] + Coordinate(geometry[j - 1][1], geometry[j - 1][0]).distance_to(Coordinate(geometry[j][1], geometry[j][0]))
-      for j in range(1, len(geometry))
+      cumulative_distances[-1] + Coordinate(geometry[step - 1][1], geometry[step - 1][0]).distance_to(Coordinate(geometry[step][1], geometry[step][0]))
+      for step in range(1, len(geometry))
     )
     maxspeed = [(ms['speed'], ms['unit']) for ms in route['maxspeed']]
     steps = []
@@ -122,7 +121,7 @@ class NavigationInstructions:
       self.coord.latitude = current_lat
       self.coord.longitude = current_lon
       distance = self.coord.distance_to(progress['next_turn']['location'])
-      if distance <= 40:
+      if distance <= 100:
         modifier = progress['next_turn']['modifier']
         if modifier:
           return str(modifier)
