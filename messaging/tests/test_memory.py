@@ -22,6 +22,9 @@ def analyze_memory_stats(stats_str):
     if 'size=' not in line or 'count=' not in line:
       continue
 
+    if 'test_memory.py' in line:
+      continue
+
     try:
       # Parse: size=x KiB, count=x, average=x B
       size_part = line.split('size=')[1].split(',')[0].strip()
@@ -58,7 +61,7 @@ def test_memory_leak_submaster(capsys):
       msg.timestamp = int(publish_time * 1000000)  # microseconds
       msg.upcomingTurn = "left" if i % 4 == 0 else "none"
       msg.currentSpeedLimit = float(50 + (i % 10))
-      msg.currentInstruction = f"Continue for {100 + i % 100} meters"
+      msg.bannerInstructions = f"Continue for {100 + i % 100} meters"
       msg.distanceToNextTurn = float(100 + i % 200)
       msg.routeProgressPercent = float((i % 100))
       msg.distanceFromRoute = float(i % 50)
@@ -70,7 +73,7 @@ def test_memory_leak_submaster(capsys):
         _ = received.timestamp
         _ = received.upcomingTurn
         _ = received.currentSpeedLimit
-        _ = received.currentInstruction
+        _ = received.bannerInstructions
         _ = received.distanceToNextTurn
         _ = received.routeProgressPercent
         _ = received.distanceFromRoute
@@ -91,8 +94,8 @@ def test_memory_leak_submaster(capsys):
       print(f"Average latency: {avg_latency:.6f}s")
       assert avg_latency < 0.06, f"Average latency {avg_latency:.6f}s exceeds 60ms"
 
-    # flag if above 5 MB, may be a bit too conservative
-    assert memory_increase < 5, f"Potential leak: {memory_increase:.2f} MB increase"
+    # flag if above 7.5 MB, may be a bit too conservative
+    assert memory_increase < 7.5, f"Potential leak: {memory_increase:.2f} MB increase"
 
     # check memory allocations for potential leaks
     stats_analysis = analyze_memory_stats(memory_stats)

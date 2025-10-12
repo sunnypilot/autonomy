@@ -5,8 +5,8 @@ import math
 import numpy as np
 from typing import Any, cast
 
+from common.params.params import Params
 from navigation.common.constants import CV
-from navigation.common.params.params import Params
 
 DIRECTIONS = ('left', 'right', 'straight')
 MODIFIABLE_DIRECTIONS = ('left', 'right')

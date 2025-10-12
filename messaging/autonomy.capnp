@@ -17,7 +17,7 @@ struct MapboxSettings @0x8d30477844c72468 {
   speedLimitSign @12 :Text;
 }
 
-struct Maneuver @0x9f8b7c6d5e4f3a2b {
+struct Maneuver @0xf1e434d0d6294b3b {
   distance @0 :Float64;
   type @1 :Text;
   modifier @2 :Text;

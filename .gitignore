@@ -27,4 +27,4 @@ autonomy.egg-info/
 # Compiled files
 *.dylib
 *.so
-navigation/common/params/params_pyx.cpp
+common/params/params_pyx.cpp
