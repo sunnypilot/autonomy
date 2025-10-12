@@ -53,5 +53,6 @@ def main():
     print(f"Alive: {alive}, Not alive: {not_alive}")
     time.sleep(1)
 
+
 if __name__ == "__main__":
   main()

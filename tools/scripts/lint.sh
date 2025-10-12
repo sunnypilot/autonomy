@@ -45,7 +45,10 @@ function run_tests() {
   ALL_FILES=$1
   PYTHON_FILES=$2
 
-  run "ruff" ruff check $ROOT --quiet
+  run "ruff" ruff check $ROOT --quiet ${FIX:+--fix}
+  if [[ -n "$FIX" ]]; then
+    run "ruff format" ruff format $ROOT
+  fi
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
   run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
@@ -76,6 +79,8 @@ function help() {
   echo "          Skip slow tests"
   echo -e "  ${BOLD}-s, --skip${NC}"
   echo "          Specify tests to skip separated by spaces"
+  echo -e "  ${BOLD}-x, --fix${NC}"
+  echo "          Auto-fix fixable issues"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
   echo "  ./tools/scripts/lint.sh mypy ruff"
@@ -84,8 +89,8 @@ function help() {
   echo "  ./tools/scripts/lint.sh --skip mypy ruff"
   echo "          Skip the mypy and ruff tests"
   echo ""
-  echo "  ./tools/scripts/lint.sh"
-  echo "          Run all the tests"
+  echo "  ./tools/scripts/lint.sh --fix"
+  echo "          Run all tests and fix issues"
 }
 
 SKIP=""
@@ -94,6 +99,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     -f | --fast ) shift 1; FAST="1" ;;
     -s | --skip ) shift 1; SKIP=" " ;;
+    -x | --fix ) shift 1; FIX="1" ;;
     -h | --help | -help | --h ) help; exit 0 ;;
     * ) if [[ -n $SKIP ]]; then SKIP+="$1 "; else RUN+="$1 "; fi; shift 1 ;;
   esac

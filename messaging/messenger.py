@@ -52,6 +52,7 @@ def load_registry(path="messaging/services.yaml") -> dict[str, dict]:
 
 class PubMaster:
   """Publishes messages to ZMQ publisher socket."""
+
   def __init__(self, service_names, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     if isinstance(service_names, str):
@@ -83,6 +84,7 @@ class PubMaster:
 
 class SubMaster:
   """Subscribes to multiple ZMQ publisher sockets and maintains latest messages."""
+
   def __init__(self, service_names=None, registry_path="messaging/services.yaml") -> None:
     self.registry: dict[str, dict] = load_registry(registry_path)
     if service_names is None:
@@ -181,8 +183,7 @@ class SubMaster:
     with self._lock:
       return {
         name: (
-          self.services[name]["received_at"] is not None and
-          (time.monotonic() - self.services[name]["received_at"]) < (self.services[name]["timeout_seconds"])
+          self.services[name]["received_at"] is not None and (time.monotonic() - self.services[name]["received_at"]) < (self.services[name]["timeout_seconds"])
         )
         for name in self.services
       }
