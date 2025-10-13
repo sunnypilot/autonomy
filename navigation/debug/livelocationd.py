@@ -1,8 +1,8 @@
-import time
 import logging
 import math
 
 import messaging.messenger as messenger
+from common.ratekeeper import Ratekeeper
 
 
 class Livelocationd:
@@ -10,6 +10,7 @@ class Livelocationd:
 
   def __init__(self):
     self.pm = messenger.PubMaster('livelocationd')
+    self.rk = Ratekeeper(self.pm['livelocationd'].rate_hz, 'livelocationd')
 
     # Initial coordinates set along a route navigating to a random house in CA that google picked: 580 Winchester Dr, Oxnard, CA.
     self.lat = 34.2299
@@ -38,7 +39,7 @@ class Livelocationd:
       self.lat += self.lat_increment
       self.lon += self.lon_increment
 
-      time.sleep(self.pm['livelocationd'].rate_hz)
+      self.rk.keep_time()
 
 
 def main():
