@@ -101,7 +101,7 @@ class Navigationd:
     msg.totalTimeRemaining = progress['total_time_remaining'] if progress else 0.0
 
     all_maneuvers = (
-      [messenger.schema.Maneuver.new_message(distance=m['distance'], type=m['type'], modifier=m['modifier']) for m in progress['all_maneuvers']]
+      [messenger.schema.MapboxSettings.Maneuver.new_message(distance=m['distance'], type=m['type'], modifier=m['modifier']) for m in progress['all_maneuvers']]
       if progress
       else []
     )

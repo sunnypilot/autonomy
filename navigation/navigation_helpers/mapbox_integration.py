@@ -52,7 +52,15 @@ class MapboxIntegration:
     if not token:
       return None
 
-    params = {'access_token': token, 'geometries': 'geojson', 'steps': 'true', 'overview': 'full', 'annotations': 'maxspeed', 'banner_instructions': 'true'}
+    params = {
+      'access_token': token,
+      'geometries': 'geojson',
+      'steps': 'true',
+      'overview': 'full',
+      'annotations': 'maxspeed',
+      'alternatives': 'false',
+      'banner_instructions': 'true',
+    }
     if bearing is not None:
       params['bearings'] = f'{int((bearing + 360) % 360):.0f},90;'
 

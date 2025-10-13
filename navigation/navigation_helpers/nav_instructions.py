@@ -9,6 +9,7 @@ class NavigationInstructions:
     self.coord = Coordinate(0, 0)
     self._cached_route = None
     self._route_loaded = False
+    self._no_route = False
 
   def get_route_progress(self, current_lat, current_lon):
     '''Get current position on route and distance to next turn'''
@@ -20,9 +21,7 @@ class NavigationInstructions:
     self.coord.longitude = current_lon
 
     # Find closest point on the route polyline
-    closest_idx, min_distance = min(
-      ((idx, self.coord.distance_to(Coordinate(latitude, longitude))) for idx, (longitude, latitude) in enumerate(route['geometry'])), key=lambda x: x[1]
-    )
+    closest_idx, min_distance = min(((idx, self.coord.distance_to(coord)) for idx, coord in enumerate(route['geometry'])), key=lambda x: x[1])
     closest_cumulative = route['cumulative_distances'][closest_idx]
 
     # Find the current step idx: the highest idx where the step location cumulative <= closest_cumulative
@@ -47,12 +46,13 @@ class NavigationInstructions:
       total_time_remaining = time_left_in_step + sum(step['duration'] for step in route['steps'][current_step_idx + 1 :])
 
     all_maneuvers: list = []
-    for idx in range(current_step_idx, len(route['steps'])):
+    max_maneuvers = 2
+    for idx in range(current_step_idx, min(current_step_idx + max_maneuvers, len(route['steps']))):
       step = route['steps'][idx]
       if idx == current_step_idx:
         distance = distance_to_end_of_step
       else:
-        distance = distance_to_end_of_step + sum(route['steps'][idx]['distance'] for idx in range(current_step_idx + 1, idx + 1))
+        distance = step['cumulative_distance'] - closest_cumulative
       all_maneuvers.append({'distance': distance, 'type': step['maneuver'], 'modifier': step['modifier']})
 
     return {
@@ -73,24 +73,24 @@ class NavigationInstructions:
   def get_current_route(self):
     if self._route_loaded and self._cached_route is not None:
       return self._cached_route
+    if self._no_route:
+      return None
 
     param_value = self.params.get('MapboxSettings')
     route = param_value['navData']['route'] if param_value else None
     if not route:
+      self._no_route = True
       return None
     steps = []
 
-    geometry = [(coord['longitude'], coord['latitude']) for coord in route['geometry']]
+    geometry = [Coordinate(coord['latitude'], coord['longitude']) for coord in route['geometry']]
     cumulative_distances = [0.0]
-    cumulative_distances.extend(
-      cumulative_distances[-1] + Coordinate(geometry[step - 1][1], geometry[step - 1][0]).distance_to(Coordinate(geometry[step][1], geometry[step][0]))
-      for step in range(1, len(geometry))
-    )
+    cumulative_distances.extend(cumulative_distances[-1] + geometry[step - 1].distance_to(geometry[step]) for step in range(1, len(geometry)))
     maxspeed = [(speed['speed'], speed['unit']) for speed in route['maxspeed']]
     steps = []
     for step in route['steps']:
       location = Coordinate(step['location']['latitude'], step['location']['longitude'])
-      closest_idx = min(range(len(geometry)), key=lambda i: location.distance_to(Coordinate(geometry[i][1], geometry[i][0])))
+      closest_idx = min(range(len(geometry)), key=lambda i: location.distance_to(geometry[i]))
       steps.append({
         'bannerInstructions': step['bannerInstructions'],
         'distance': step['distance'],
@@ -115,6 +115,7 @@ class NavigationInstructions:
   def clear_route_cache(self):
     self._cached_route = None
     self._route_loaded = False
+    self._no_route = False
 
   def get_upcoming_turn_from_progress(self, progress, current_lat, current_lon) -> str:
     if progress and progress['next_turn']:
