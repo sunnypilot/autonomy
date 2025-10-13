@@ -7,9 +7,9 @@ from setproctitle import getproctitle
 class Ratekeeper:
   def __init__(self, rate):
     self.interval = rate
-    self.next_time = time.monotonic()
     self._process_name = getproctitle()
-    self._last_time = -1.0
+    self._last_monitor_time = -1.0
+    self._next_frame_time = -1.0
     self.avg_dt = deque(maxlen=100)
     self.avg_dt.append(self.interval)
 
@@ -18,23 +18,28 @@ class Ratekeeper:
     expected_dt = self.interval * (1 / 0.9)  # 10% tolerance
     return sum(self.avg_dt) / len(self.avg_dt) > expected_dt if self.avg_dt else False
 
-  def keep_time(self):
-    now = time.monotonic()
+  def keep_time(self) -> bool:
+    lagged = self.monitor_time()
+    if self._remaining > 0:
+      time.sleep(self._remaining)
+    return lagged
 
-    if self._last_time >= 0:
-      dt = now - self._last_time
-      self.avg_dt.append(dt)
+  def monitor_time(self) -> bool:
+    if self._last_monitor_time < 0:
+      self._next_frame_time = time.monotonic() + self.interval
+      self._last_monitor_time = time.monotonic()
 
-    self._last_time = now
-    self.next_time += self.interval
-    sleep_time = self.next_time - now
-    lagged = sleep_time < 0
+    prev = self._last_monitor_time
+    self._last_monitor_time = time.monotonic()
+    self.avg_dt.append(self._last_monitor_time - prev)
 
-    if lagged:
-      if self.lagging:
-        logging.warning(f"{self._process_name} lagging by {-sleep_time * 1000:.2f} ms")
-      self.next_time = now
-    else:
-      time.sleep(sleep_time)
+    lagged = False
+    remaining = self._next_frame_time - time.monotonic()
+    self._next_frame_time += self.interval
 
+    if self.lagging:
+      logging.warning(f"{self._process_name} lagging by {-remaining * 1000:.2f} ms")
+      lagged = True
+
+    self._remaining = remaining
     return lagged
