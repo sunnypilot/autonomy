@@ -75,7 +75,7 @@ class Navigationd:
 
         # Don't recompute in last segment to prevent reroute loops
         if self.route:
-          if progress['current_step_index'] == len(self.route['steps']) - 1:
+          if progress['current_step_idx'] == len(self.route['steps']) - 1:
             self.allow_recompute = False
 
         if self.recompute_allowed:
