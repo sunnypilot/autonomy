@@ -31,7 +31,7 @@ class Navigationd:
     self.last_bearing: float | None = None
     self.is_metric: bool = False
 
-  def update_params(self):
+  def _update_params(self):
     if self.last_position is not None:
       self.frame += 1
       if self.frame % 9 == 0:
@@ -118,7 +118,7 @@ class Navigationd:
         self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
         self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
 
-      self.update_params()
+      self._update_params()
       banner_instructions, progress, nav_data = self._update_navigation()
 
       msg = self._build_navigation_message(banner_instructions, progress, nav_data)
