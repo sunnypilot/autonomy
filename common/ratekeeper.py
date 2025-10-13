@@ -10,7 +10,6 @@ class Ratekeeper:
     self.next_time = time.monotonic()
     self.frame = 0
     self._process_name = getproctitle()
-    self._remaining = 0.0
     self._last_time = -1.0
     self.avg_dt = deque(maxlen=100)
     self.avg_dt.append(self.interval)
@@ -40,5 +39,4 @@ class Ratekeeper:
     else:
       time.sleep(sleep_time)
 
-    self._remaining = sleep_time if not lagged else 0.0
     return lagged
