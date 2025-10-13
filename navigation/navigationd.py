@@ -4,6 +4,7 @@ import time
 
 import messaging.messenger as messenger
 from common.params.params import Params
+from common.ratekeeper import Ratekeeper
 from navigation.navd.helpers import Coordinate, parse_banner_instructions
 from navigation.navigation_helpers.mapbox_integration import MapboxIntegration
 from navigation.navigation_helpers.nav_instructions import NavigationInstructions
@@ -17,6 +18,7 @@ class Navigationd:
 
     self.sm = messenger.SubMaster('livelocationd')
     self.pm = messenger.PubMaster('navigationd')
+    self.rk = Ratekeeper(self.pm['navigationd'].rate_hz)
 
     self.route = None
     self.destination: str | None = None
@@ -124,7 +126,7 @@ class Navigationd:
       msg = self._build_navigation_message(banner_instructions, progress, nav_data)
 
       self.pm.send('navigationd', msg)
-      time.sleep(self.pm['navigationd'].rate_hz)
+      self.rk.keep_time()
 
 
 def main():

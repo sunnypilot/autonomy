@@ -3,12 +3,14 @@ import multiprocessing
 import importlib
 import signal
 import sys
+from setproctitle import setproctitle
 
 if sys.platform == 'darwin':
   multiprocessing.set_start_method('spawn', force=True)
 
 
 def python_process_launcher(module_name):
+  setproctitle(module_name.split('.')[-1])
   module = importlib.import_module(module_name)
   module.main()
 
