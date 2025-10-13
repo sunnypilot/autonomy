@@ -110,12 +110,12 @@ class Navigationd:
   def run(self):
     logging.warning('navigationd init')
     while True:
-      gps_msg = self.sm['livelocationd']
+      location = self.sm['livelocationd']
+      localizer_valid = location.positionGeodetic.valid if location else False
 
-      if gps_msg:
-        self.last_position = Coordinate(gps_msg.positionGeodetic.value[0], gps_msg.positionGeodetic.value[1])
-        if gps_msg.calibratedOrientationNED.valid:
-          self.last_bearing = math.degrees(gps_msg.calibratedOrientationNED.value[2])
+      if localizer_valid:
+        self.last_bearing = math.degrees(location.calibratedOrientationNED.value[2])
+        self.last_position = Coordinate(location.positionGeodetic.value[0], location.positionGeodetic.value[1])
 
       self.update_params()
       banner_instructions, progress, nav_data = self._update_navigation()
