@@ -8,7 +8,7 @@ from common.ratekeeper import Ratekeeper
 class Navigationd:
   def __init__(self):
     self.pm = messenger.PubMaster('navigationd')
-    self.rk = Ratekeeper(self.pm['navigationd'].rate_hz, 'navigationd')
+    self.rk = Ratekeeper(self.pm['navigationd'].rate_hz)
 
   def run(self):
     logging.warning("navigationd init")

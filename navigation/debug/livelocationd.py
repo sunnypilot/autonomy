@@ -10,7 +10,7 @@ class Livelocationd:
 
   def __init__(self):
     self.pm = messenger.PubMaster('livelocationd')
-    self.rk = Ratekeeper(self.pm['livelocationd'].rate_hz, 'livelocationd')
+    self.rk = Ratekeeper(self.pm['livelocationd'].rate_hz)
 
     # Initial coordinates set along a route navigating to a random house in CA that google picked: 580 Winchester Dr, Oxnard, CA.
     self.lat = 34.2299

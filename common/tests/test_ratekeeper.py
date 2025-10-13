@@ -19,7 +19,7 @@ def test_ratekeeper_integration():
 
   try:
     sm = messenger.SubMaster()
-    time.sleep(1.0)  # Allow some time for services to start and messages to be published
+    time.sleep(1.0)
     start_time = time.monotonic()
     message_counts = {name: 0 for name in rates}
     last_timestamps = {name: 0 for name in rates}

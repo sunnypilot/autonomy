@@ -1,25 +1,44 @@
 import time
 import logging
+from collections import deque
+from setproctitle import getproctitle
 
 
 class Ratekeeper:
-  def __init__(self, interval, name="", print_delay_threshold=0.0):
-    self.interval = interval
+  def __init__(self, rate):
+    self.interval = rate
     self.next_time = time.monotonic()
-    self.print_delay_threshold = print_delay_threshold
     self.frame = 0
-    self.name = name
+    self._process_name = getproctitle()
+    self._remaining = 0.0
+    self._last_time = -1.0
+    self.avg_dt = deque(maxlen=100)
+    self.avg_dt.append(self.interval)
+
+  @property
+  def lagging(self):
+    expected_dt = self.interval * (1 / 0.9)  # 10% tolerance
+    return sum(self.avg_dt) / len(self.avg_dt) > expected_dt if self.avg_dt else False
 
   def keep_time(self):
     self.frame += 1
-    self.next_time += self.interval
     now = time.monotonic()
+
+    if self._last_time >= 0:
+      dt = now - self._last_time
+      self.avg_dt.append(dt)
+
+    self._last_time = now
+    self.next_time += self.interval
     sleep_time = self.next_time - now
     lagged = sleep_time < 0
+
     if lagged:
-      if self.print_delay_threshold > 0 and sleep_time < -self.print_delay_threshold:
-        logging.warning(f"{self.name} lagging by {-sleep_time * 1000:.2f} ms")
+      if self.lagging:
+        logging.warning(f"{self._process_name} lagging by {-sleep_time * 1000:.2f} ms")
       self.next_time = now
     else:
       time.sleep(sleep_time)
+
+    self._remaining = sleep_time if not lagged else 0.0
     return lagged
