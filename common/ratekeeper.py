@@ -8,7 +8,6 @@ class Ratekeeper:
   def __init__(self, rate):
     self.interval = rate
     self.next_time = time.monotonic()
-    self.frame = 0
     self._process_name = getproctitle()
     self._last_time = -1.0
     self.avg_dt = deque(maxlen=100)
@@ -20,7 +19,6 @@ class Ratekeeper:
     return sum(self.avg_dt) / len(self.avg_dt) > expected_dt if self.avg_dt else False
 
   def keep_time(self):
-    self.frame += 1
     now = time.monotonic()
 
     if self._last_time >= 0:
