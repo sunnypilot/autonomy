@@ -109,6 +109,7 @@ class Navigationd:
 
   def run(self):
     logging.warning('navigationd init')
+
     while True:
       location = self.sm['livelocationd']
       localizer_valid = location.positionGeodetic.valid if location else False
