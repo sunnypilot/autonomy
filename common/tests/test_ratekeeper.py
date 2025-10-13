@@ -19,7 +19,7 @@ def test_ratekeeper_integration():
 
   try:
     sm = messenger.SubMaster()
-    time.sleep(1.0)
+    time.sleep(1.0)  # Heavy startup sleep to reduce any potential flakes
     start_time = time.monotonic()
     message_counts = {name: 0 for name in rates}
     last_timestamps = {name: 0 for name in rates}
@@ -35,13 +35,12 @@ def test_ratekeeper_integration():
           elif name == 'livelocationd' and msg.positionGeodetic.value[0] > last_lats[name]:
             message_counts[name] += 1
             last_lats[name] = msg.positionGeodetic.value[0]
-    # Check that we received at least 4 secs worth of messages for each service
+    # Check at least 4 secs worth of messages for each service were received
     for name, count in message_counts.items():
       expected_min = int(rates[name] * 4)
       assert count >= expected_min, f"Service {name} received {count} messages, expected at least {expected_min} for {rates[name]} Hz"
 
-    # timing between messages
-    for name in rates:
+    for name in rates:  # timing between messages
       if message_counts[name] > 1:
         avg_interval = 5.0 / message_counts[name]
         expected_interval = 1.0 / rates[name]
