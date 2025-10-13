@@ -29,10 +29,10 @@ def test_ratekeeper_integration():
       for name in rates:
         msg = sm[name]
         if msg:
-          if name == 'navigationd' and hasattr(msg, 'timestamp') and msg.timestamp > last_timestamps[name]:
+          if name == 'navigationd' and msg.timestamp > last_timestamps[name]:
             message_counts[name] += 1
             last_timestamps[name] = msg.timestamp
-          elif name == 'livelocationd' and hasattr(msg, 'positionGeodetic') and msg.positionGeodetic.value[0] > last_lats[name]:
+          elif name == 'livelocationd' and msg.positionGeodetic.value[0] > last_lats[name]:
             message_counts[name] += 1
             last_lats[name] = msg.positionGeodetic.value[0]
     # Check that we received at least 4 secs worth of messages for each service
