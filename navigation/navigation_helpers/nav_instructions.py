@@ -5,14 +5,14 @@ from navigation.navd.helpers import Coordinate, string_to_direction
 
 class NavigationInstructions:
   def __init__(self):
-    self.params = Params()
     self.coord = Coordinate(0, 0)
+    self.params = Params()
     self._cached_route = None
     self._route_loaded = False
     self._no_route = False
 
-  def get_route_progress(self, current_lat, current_lon):
-    '''Get current position on route and distance to next turn'''
+  def get_route_progress(self, current_lat, current_lon) -> dict | None:
+    '''Get current position on route and progress information'''
     route = self.get_current_route()
     if not route or not route['geometry'] or not route['steps']:
       return None

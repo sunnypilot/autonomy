@@ -1,5 +1,5 @@
-from urllib.parse import quote
 import requests
+from urllib.parse import quote
 
 from common.params.params import Params
 
@@ -13,7 +13,7 @@ class MapboxIntegration:
     return token
 
   def set_destination(self, postvars, current_lon, current_lat, bearing=None) -> tuple[dict, bool]:
-    if 'latitude' in postvars and 'longitude' in postvars:
+    if 'latitude' and 'longitude' in postvars:
       self.nav_confirmed(postvars, current_lon, current_lat, bearing)
       return postvars, True
 
@@ -25,7 +25,7 @@ class MapboxIntegration:
     query = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{quote(addr)}.json?access_token={token}&limit=1&proximity={current_lon},{current_lat}'
     response = requests.get(query, timeout=10)
     if response.status_code == 200:
-      features = response.json().get('features', [])
+      features = response.json()['features']
       if features:
         longitude, latitude = features[0]['geometry']['coordinates']
         postvars.update({'latitude': latitude, 'longitude': longitude, 'name': addr})
