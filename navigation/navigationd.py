@@ -32,6 +32,7 @@ class Navigationd:
     self.last_position: Coordinate | None = None
     self.last_bearing: float | None = None
     self.is_metric: bool = False
+    self.valid: bool = False
 
   def _update_params(self):
     if self.last_position is not None:
@@ -54,6 +55,8 @@ class Navigationd:
           self.nav_instructions.clear_route_cache()
           self.route = self.nav_instructions.get_current_route()
           self.reroute_counter = 0
+
+      self.valid = self.route is not None
 
   def _update_navigation(self) -> tuple[str, dict | None, dict]:
     banner_instructions: str = ''
@@ -99,6 +102,7 @@ class Navigationd:
     msg.routePositionCumulative = nav_data.get('route_position_cumulative', 0.0)
     msg.totalDistanceRemaining = progress['total_distance_remaining'] if progress else 0.0
     msg.totalTimeRemaining = progress['total_time_remaining'] if progress else 0.0
+    msg.valid = self.valid
 
     all_maneuvers = (
       [messenger.schema.MapboxSettings.Maneuver.new_message(distance=m['distance'], type=m['type'], modifier=m['modifier']) for m in progress['all_maneuvers']]

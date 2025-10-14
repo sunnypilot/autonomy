@@ -14,6 +14,7 @@ struct MapboxSettings @0x8d30477844c72468 {
   totalDistanceRemaining @9 :Float64;
   totalTimeRemaining @10 :Float64;
   allManeuvers @11 :List(Maneuver);
+  valid @12 :Bool;
 
   struct Maneuver {
     distance @0 :Float64;

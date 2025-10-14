@@ -23,14 +23,17 @@ class MapboxIntegration:
 
     token = self.get_public_token()
     query = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{quote(addr)}.json?access_token={token}&limit=1&proximity={current_lon},{current_lat}'
-    response = requests.get(query, timeout=10)
-    if response.status_code == 200:
-      features = response.json()['features']
-      if features:
-        longitude, latitude = features[0]['geometry']['coordinates']
-        postvars.update({'latitude': latitude, 'longitude': longitude, 'name': addr})
-        self.nav_confirmed(postvars, current_lon, current_lat, bearing)
-        return postvars, True
+    try:
+      response = requests.get(query, timeout=5)
+      if response.status_code == 200:
+        features = response.json()['features']
+        if features:
+          longitude, latitude = features[0]['geometry']['coordinates']
+          postvars.update({'latitude': latitude, 'longitude': longitude, 'name': addr})
+          self.nav_confirmed(postvars, current_lon, current_lat, bearing)
+          return postvars, True
+    except requests.RequestException:
+      pass  # Handle network errors without crashing service
     return postvars, False
 
   def nav_confirmed(self, postvars, start_lon, start_lat, bearing=None) -> None:
@@ -64,8 +67,12 @@ class MapboxIntegration:
     if bearing is not None:
       params['bearings'] = f'{int((bearing + 360) % 360):.0f},90;'
 
-    response = requests.get(f'https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}', params=params, timeout=10)
-    data = response.json() if response.status_code == 200 else {}
+    try:
+      response = requests.get(f'https://api.mapbox.com/directions/v5/mapbox/driving/{start_lon},{start_lat};{end_lon},{end_lat}', params=params, timeout=5)
+      data = response.json() if response.status_code == 200 else {}
+    except requests.RequestException:
+      return None
+
     routes = data['routes'] if data else None
     legs = routes[0]['legs'] if routes else None
 
