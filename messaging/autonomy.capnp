@@ -14,13 +14,13 @@ struct MapboxSettings @0x8d30477844c72468 {
   totalDistanceRemaining @9 :Float64;
   totalTimeRemaining @10 :Float64;
   allManeuvers @11 :List(Maneuver);
-  speedLimitSign @12 :Text;
-}
+  valid @12 :Bool;
 
-struct Maneuver @0xf1e434d0d6294b3b {
-  distance @0 :Float64;
-  type @1 :Text;
-  modifier @2 :Text;
+  struct Maneuver {
+    distance @0 :Float64;
+    type @1 :Text;
+    modifier @2 :Text;
+  }
 }
 
 struct LiveLocationKalman @0xe98c100195e6f0c0 {
