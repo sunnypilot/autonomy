@@ -4,6 +4,7 @@ import yaml
 from pathlib import Path
 
 import messaging.messenger as messenger
+from common.ratekeeper import Ratekeeper
 from system.manager import main as manager_main
 
 
@@ -11,13 +12,12 @@ def test_ratekeeper_integration():
   original_services = Path("messaging/services.yaml")
   with original_services.open() as f:
     config = yaml.safe_load(f)
-
   rates = {service["name"]: service["rate_hz"] for service in config["services"]}
   manager = multiprocessing.Process(target=manager_main)
   manager.start()
-  time.sleep(1.0)
 
   try:
+    rk = Ratekeeper(0.01)
     sm = messenger.SubMaster()
     time.sleep(1.0)  # Heavy startup sleep to reduce any potential flakes
     start_time = time.monotonic()
@@ -35,6 +35,7 @@ def test_ratekeeper_integration():
           elif name == 'livelocationd' and msg.positionGeodetic.value[0] > last_lats[name]:
             message_counts[name] += 1
             last_lats[name] = msg.positionGeodetic.value[0]
+      rk.keep_time()
     # Check at least 4 secs worth of messages for each service were received
     for name, count in message_counts.items():
       expected_min = int(rates[name] * 4)
