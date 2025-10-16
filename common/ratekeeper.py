@@ -8,38 +8,38 @@ class Ratekeeper:
   def __init__(self, rate):
     self.interval = rate
     self._process_name = getproctitle()
-    self._last_monitor_time = -1.0
-    self._next_frame_time = -1.0
-    self.avg_dt = deque(maxlen=100)
-    self.avg_dt.append(self.interval)
+    self._last_check_time = -1.0
+    self._next_target_time = -1.0
+    self._delta_times = deque(maxlen=100)
 
   @property
   def lagging(self):
-    expected_dt = self.interval * (1 / 0.9)  # 10% tolerance
-    return sum(self.avg_dt) / len(self.avg_dt) > expected_dt if self.avg_dt else False
+    tolerance = self.interval * 0.10  # 10% tolerance
+    max_tolerated_dt = self.interval + tolerance
+    return sum(self._delta_times) / len(self._delta_times) > max_tolerated_dt if self._delta_times else False
 
   def keep_time(self) -> bool:
-    lagged = self.monitor_time()
-    if self._remaining > 0:
-      time.sleep(self._remaining)
-    return lagged
+    is_lagging = self.monitor_time()
+    if self._time_remaining > 0:
+      time.sleep(self._time_remaining)
+    return is_lagging
 
   def monitor_time(self) -> bool:
-    if self._last_monitor_time < 0:
-      self._next_frame_time = time.monotonic() + self.interval
-      self._last_monitor_time = time.monotonic()
+    if self._last_check_time < 0:
+      self._next_target_time = time.monotonic() + self.interval
+      self._last_check_time = time.monotonic()
 
-    prev = self._last_monitor_time
-    self._last_monitor_time = time.monotonic()
-    self.avg_dt.append(self._last_monitor_time - prev)
+    prev = self._last_check_time
+    self._last_check_time = time.monotonic()
+    self._delta_times.append(self._last_check_time - prev)
 
-    lagged = False
-    remaining = self._next_frame_time - time.monotonic()
-    self._next_frame_time += self.interval
+    is_lagging = False
+    time_remaining = self._next_target_time - time.monotonic()
+    self._next_target_time += self.interval
 
     if self.lagging:
-      logging.warning(f"{self._process_name} lagging by {-remaining * 1000:.2f} ms")
-      lagged = True
+      logging.warning(f"{self._process_name} lagging by {-time_remaining * 1000:.2f} ms")
+      is_lagging = True
 
-    self._remaining = remaining
-    return lagged
+    self._time_remaining = time_remaining
+    return is_lagging
