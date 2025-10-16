@@ -4,7 +4,7 @@ This repository contains machine learning components and tools to advance sunnyp
 
 ## Overview
 
-The repository includes implementations and tools for:
+This repository focuses on machine learning components and tools to enhance sunnypilot's autonomous driving capabilities. Currently, it includes model-specific code offloaded from the main sunnypilot repository, with navigation as the primary implementation. Future developments will expand to include:
 
 - **Vision Encoders**: Neural network components for processing visual data from cameras.
 - **Vision Classifiers**: Models for classifying objects and scenes in driving environments, such as street lights, pedestrians, etc...
@@ -12,7 +12,6 @@ The repository includes implementations and tools for:
 - **Testing Capabilities**: Validated integration testing for troubleshooting and analyzing model performance.
 - **Driving Model Merge Scripts**: Tools to combine multiple driving models into one.
 - **Quantizers**: Algorithms for model quantization to optimize performance and size, able to downsample 1 GB models to 200MiB models.
-- **Model-Specific Code**: Offloaded code from the sunnypilot repository to help better the dev experience.
 
 ## Setting up environment
 
@@ -29,9 +28,11 @@ The params module uses a compiled C++ library for default values. Build it with:
 
 ## Repository Structure
 
-- `navigation`: module containing mapbox navigation features created to be transitioned to sunnypilot as a semi-offline navigation naemon. This module will map turn desires, keep left/right, and eventually auto lane changes to navigation instructions to provide a more comfortable user experience.
-
-- `tools`: setup scripts and test runners. 
+- `common`: Shared utilities and the params module for storing config data persistently with Cython and Cap'n Proto.
+- `messaging`: Handles messaging between components using ZMQ messenger over IPC.
+- `navigation`: Sunnypilot navigation daemon that integrates with Mapbox for geocoding, routing, and turn-by-turn guidance.
+- `system`: Manages system processes, including the manager daemon that launches and monitors components like navigation and live location services using multiprocessing.
+- `tools`: This contains development tools like setup scripts, lint, and mutation test runners. 
 
 ## Contributing
 
