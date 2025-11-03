@@ -3,6 +3,7 @@ import numpy as np
 import onnx
 import onnxruntime as ort
 from onnx import numpy_helper
+from typing import cast
 
 
 class ValidateModel:
@@ -42,7 +43,7 @@ class ValidateModel:
         problematic_weights.append(f"{name}: Contains Inf values")
       if stats['std'] == 0 and all(sub not in name.lower() for sub in ['bias', 'pad']):
         problematic_weights.append(f"{name}: Zero variance (might be frozen)")
-      if abs(stats['mean']) > 10:
+      if abs(cast(float, stats['mean'])) > 10:
         problematic_weights.append(f"{name}: Large mean value ({stats['mean']:.3f})")
 
     if problematic_weights:
@@ -109,10 +110,10 @@ class ValidateModel:
     for issue in self.issues:
       logging.error(issue)
 
-    results = []
+    results: list[bool] = []
     results.append(self._check_model(model_path))
-    results.append(self._analyze_weights)
-    results.append(self._analyze_shapes)
+    results.append(self._analyze_weights())
+    results.append(self._analyze_shapes())
     results.append(self._inference_session(model_path))
     success = all(results)
     return success
