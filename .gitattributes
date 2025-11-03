@@ -1,2 +1,0 @@
-*onnx filter=lfs diff=lfs merge=lfs -text
-driving_model_scripts/model_path/model1/driving_policy.onnx filter=lfs diff=lfs merge=lfs -text
