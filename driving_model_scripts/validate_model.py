@@ -118,12 +118,13 @@ class ValidateModel:
     except DecodeError:
       return False
 
-    for issue in self.issues:
-      logging.error(issue)
-
     results: list[bool] = []
     results.append(self._analyze_weights())
     results.append(self._analyze_shapes())
     results.append(self._inference_session(model_path))
     success = all(results)
+
+    for issue in self.issues:
+      logging.error(issue)
+
     return success
