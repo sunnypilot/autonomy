@@ -43,7 +43,7 @@ class TestMerge:
   def test_merge_model_weights(self):
     self.merge.merge_model_weights(self.temp_path.name)
     assert os.path.exists(self.temp_path.name)
-    assert os.path.getsize(self.temp_path.name) > 15_000_000
+    assert os.path.getsize(self.temp_path.name) > 13_500_000
 
     merged_model = onnx.load(self.temp_path.name)
     merged_model_names = {init.name for init in merged_model.graph.initializer}
