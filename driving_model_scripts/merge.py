@@ -1,3 +1,4 @@
+import logging
 import os
 import onnx
 from onnx import numpy_helper
@@ -11,47 +12,37 @@ class MergePolicyModel:
     self.model1 = onnx.load(model_path1)
     self.model2 = onnx.load(model_path2)
 
-  def merge_model_weights(self, output_path, weight=0.5):
-    # Extract checkpoint info
-    checkpoint1_info = "N/A"
+  def _extract_checkpoint_info(self) -> tuple:
+    checkpoint1_info = ""
+    checkpoint2_info = ""
+
     for prop in self.model1.metadata_props:
       if prop.key == "model_checkpoint":
         checkpoint1_info = prop.value
         break
 
-    checkpoint2_info = "N/A"
     for prop in self.model2.metadata_props:
       if prop.key == "model_checkpoint":
         checkpoint2_info = prop.value
         break
+  
+    return checkpoint1_info, checkpoint2_info
 
-    params1 = {init.name: init for init in self.model1.graph.initializer}
-    params2 = {init.name: init for init in self.model2.graph.initializer}
-
+  def _merge_head_components(self, common_keys, params1, params2, head_prefixes):
     keys1 = set(params1.keys())
     keys2 = set(params2.keys())
-    common_keys = keys1.intersection(keys2)
     model2_only_keys = keys2 - keys1
-    head_prefixes = ['policy_head', 'desire_layer']
-
-    # Check for other possible head patterns
-    all_weight_names = keys1.union(keys2)
-    possible_head_patterns = set()
-    for name in all_weight_names:
-      if any(pattern in name.lower() for pattern in ['head', 'policy', 'desire', 'output']):
-        possible_head_patterns.add(name.split('.')[0] if '.' in name else name.split('/')[0] if '/' in name else name)
-
-    # Identify head weights in each model and create new merge
-    common_head_weights = [name for name in common_keys if any(name.startswith(prefix) for prefix in head_prefixes)]
     merged_model = self.model1
 
-    # Track changes for verification
-    removed_initializers = []
-    added_initializers = []
-    merged_weights_count = 0
+    if not head_prefixes:
+      return merged_model
+
+    if not common_keys:
+      logging.warning("No common keys found!")
+
+    common_head_weights = [name for name in common_keys if any(name.startswith(prefix) for prefix in head_prefixes)]
 
     initializers_to_remove = [init.name for init in merged_model.graph.initializer if any(init.name.startswith(prefix) for prefix in head_prefixes)]
-    removed_initializers.extend(initializers_to_remove)
     new_initializers = [init for init in merged_model.graph.initializer if init.name not in initializers_to_remove]
     merged_model.graph.ClearField('initializer')
     merged_model.graph.initializer.extend(new_initializers)
@@ -61,24 +52,20 @@ class MergePolicyModel:
       if any(name.startswith(prefix) for prefix in head_prefixes):
         new_initializer = params2[name]
         merged_model.graph.initializer.extend([new_initializer])
-        added_initializers.append(name)
 
     # Add common head weights from model2 (replacing model1's head weights)
     for name in common_head_weights:
       new_initializer = params2[name]
       merged_model.graph.initializer.extend([new_initializer])
-      added_initializers.append(name)
 
     # Remove old head nodes
     nodes_to_remove_names = [node.name for node in merged_model.graph.node if any(node.name.startswith(prefix) for prefix in head_prefixes)]
     new_nodes = [node for node in merged_model.graph.node if node.name not in nodes_to_remove_names]
 
     # Add new head nodes from model2
-    added_nodes = []
     for node in self.model2.graph.node:
       if any(node.name.startswith(prefix) for prefix in head_prefixes):
         new_nodes.append(node)
-        added_nodes.append(node.name)
 
     # Update the graph nodes
     merged_model.graph.ClearField('node')
@@ -98,7 +85,9 @@ class MergePolicyModel:
 
     merged_model.graph.ClearField('output')
     merged_model.graph.output.extend(new_outputs)
+    return merged_model
 
+  def _merge_common_weights(self, common_keys, params1, params2, head_prefixes, merged_model, weight) -> None:
     for name in common_keys:
       if any(name.startswith(prefix) for prefix in head_prefixes):
         continue
@@ -113,13 +102,12 @@ class MergePolicyModel:
       merged_w = (weight * w1) + ((1 - weight) * w2)
       new_tensor = numpy_helper.from_array(merged_w, name=name)
 
-      for i, tensor in enumerate(merged_model.graph.initializer):
+      for index, tensor in enumerate(merged_model.graph.initializer):
         if tensor.name == name:
-          merged_model.graph.initializer[i].CopyFrom(new_tensor)
-          merged_weights_count += 1
+          merged_model.graph.initializer[index].CopyFrom(new_tensor)
           break
-
-    # Create new checkpoint and add to graph
+  
+  def _update_checkpoint(self, merged_model, weight, checkpoint1_info, checkpoint2_info) -> None:
     new_checkpoint_info = f"merged with {weight}w from (model1: '{checkpoint1_info}') and (model2: '{checkpoint2_info}')"
     existing_metadata = {}
 
@@ -137,6 +125,7 @@ class MergePolicyModel:
     checkpoint_prop.key = "model_checkpoint"
     checkpoint_prop.value = new_checkpoint_info
 
+  def _save_and_validate_model(self, merged_model, output_path) -> None:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     onnx.save(merged_model, output_path)
     validation_passed = self.validate_model.validate_target_model(output_path)
@@ -147,6 +136,21 @@ class MergePolicyModel:
     else:
       print("\nModel saved but has validation issues")
       print(f"Check: '{output_path}'")
+
+  def merge_model_weights(self, output_path, weight=0.5) -> None:
+    checkpoint1_info, checkpoint2_info = self._extract_checkpoint_info()
+    params1 = {init.name: init for init in self.model1.graph.initializer}
+    params2 = {init.name: init for init in self.model2.graph.initializer}
+    keys1 = set(params1.keys())
+    keys2 = set(params2.keys())
+    common_keys = keys1.intersection(keys2)
+    head_prefixes = ['policy_head', 'desire_layer']
+
+    merged_model = self._merge_head_components(common_keys, params1, params2, head_prefixes)
+
+    self._merge_common_weights(common_keys, params1, params2, head_prefixes, merged_model, weight)
+    self._update_checkpoint(merged_model, weight, checkpoint1_info, checkpoint2_info)
+    self._save_and_validate_model(merged_model, output_path)
 
 
 if __name__ == "__main__":
