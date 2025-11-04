@@ -4,7 +4,7 @@ Welcome to the Driving Policy Model Merge Module by Sunnypilot Autonomy. This to
 
 ## Overview
 
-This script automates the merging of two driving policy models. It performs model validation, merging, and unit testing—all without requiring manual intervention.
+This script automates the merging of two driving policy models. It performs model validation, merging, and unit-testing all without requiring manual intervention.
 
 ## How It Works
 
