@@ -25,7 +25,7 @@ class MergePolicyModel:
       if prop.key == "model_checkpoint":
         checkpoint2_info = prop.value
         break
-  
+
     return checkpoint1_info, checkpoint2_info
 
   def _merge_head_components(self, common_keys, params1, params2, head_prefixes):
@@ -106,7 +106,7 @@ class MergePolicyModel:
         if tensor.name == name:
           merged_model.graph.initializer[index].CopyFrom(new_tensor)
           break
-  
+
   def _update_checkpoint(self, merged_model, weight, checkpoint1_info, checkpoint2_info) -> None:
     new_checkpoint_info = f"merged with {weight}w from (model1: '{checkpoint1_info}') and (model2: '{checkpoint2_info}')"
     existing_metadata = {}
