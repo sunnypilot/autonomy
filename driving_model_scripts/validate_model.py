@@ -2,6 +2,8 @@ import logging
 import numpy as np
 import onnx
 import onnxruntime as ort
+
+from google.protobuf.message import DecodeError
 from onnx import numpy_helper
 from typing import cast
 
@@ -11,9 +13,9 @@ class ValidateModel:
     self.target_model = None
     self.issues: list = []
 
-  def _check_model(self, model_path) -> bool:
+  def _check_model(self, model) -> bool:
     try:
-      onnx.checker.check_model(model_path)
+      onnx.checker.check_model(model, full_check=True)
       return True
     except Exception as e:
       logging.error(f"ONNX validation failed: {e}")
@@ -21,6 +23,9 @@ class ValidateModel:
 
   def _analyze_weights(self) -> bool:
     weight_stats = {}
+    if not self.target_model.graph.initializer:
+      return False
+
     for init in self.target_model.graph.initializer:
       weights = numpy_helper.to_array(init)
       weight_stats[init.name] = {
@@ -106,12 +111,17 @@ class ValidateModel:
       return False
 
   def validate_target_model(self, model_path) -> bool:
-    self.target_model = onnx.load(model_path)
+    try:
+      self.target_model = onnx.load(model_path)
+      if not self._check_model(self.target_model):
+        return False
+    except DecodeError:
+      return False
+
     for issue in self.issues:
       logging.error(issue)
 
     results: list[bool] = []
-    results.append(self._check_model(model_path))
     results.append(self._analyze_weights())
     results.append(self._analyze_shapes())
     results.append(self._inference_session(model_path))
