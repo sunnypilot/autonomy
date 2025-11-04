@@ -95,6 +95,8 @@ class ValidateModel:
       for name, shape, dtype in input_shapes:
         if dtype == 'tensor(float)':
           dummy_inputs[name] = np.random.randn(*shape).astype(np.float32)
+        elif dtype == 'tensor(float16)':
+          dummy_inputs[name] = np.random.randn(*shape).astype(np.float16)
         elif dtype == 'tensor(int64)':
           dummy_inputs[name] = np.random.randint(0, 10, shape).astype(np.int64)
         else:
