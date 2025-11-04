@@ -1,19 +1,22 @@
 # Driving Policy Model Merge Module
 
-* Want to figure out how to freaking merge policy driving models? 
-* Well don't dilly dally! You came to the right place. 
-## 
-* Here at sunnypilot autonomy we created a script that does the heavy work for you!
+Welcome to the Driving Policy Model Merge Module by Sunnypilot Autonomy. This tool simplifies the process of merging two policy driving models with minimal effort.
 
-* But how does this freaking thing work?
+## Overview
 
-* Well, all you have to do is place your two policy models in the supplied model1 and model2 directories. after that simply run the merge script and it handles the rest with default weight of 0.5.
+This script automates the merging of two driving policy models. It performs model validation, merging, and unit testing—all without requiring manual intervention.
 
-* How do I run the script????
-##
+## How It Works
 
-```
+1. Place your two models in the provided `model1/` and `model2/` directories.
+2. Run the merge script using the default weight of `0.5`.
+
+## Running the Script
+
+```bash
 python3 -m driving_model_scripts.merge
 ```
-* It's that easy. It handles model validation, model merging and unittesting all by it self with no user interference needed. 
-* After merging your model, test it on metadrive simulator!
+
+## Post-Merge Testing
+
+After merging, test the resulting model in the MetaDrive simulator on sunnypilot/sunnypilot to verify appropriate driving behavior. This step ensures the merged model is compatible with the Comma3X device and meets runtime expectations.
