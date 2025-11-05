@@ -125,9 +125,33 @@ class MergePolicyModel:
     checkpoint_prop.key = "model_checkpoint"
     checkpoint_prop.value = new_checkpoint_info
 
+  def _patch_where_conditions(self, merged_model):
+    for node in merged_model.graph.node:
+      if node.op_type == "Where":
+        # Patch in where conditions that are expected as type bool, but pytorch converts to double on onnx export
+        condition_name = node.input[0]
+        original = list(merged_model.graph.value_info)
+        merged_model.graph.ClearField("value_info")
+        merged_model.graph.value_info.extend(value_info for value_info in original if value_info.name != condition_name)
+        patched_shape: list = []
+
+        for init in merged_model.graph.initializer:
+          if init.name == condition_name and init.data_type == onnx.TensorProto.DOUBLE:
+            data = onnx.numpy_helper.to_array(init).astype(bool)
+            new_init = onnx.numpy_helper.from_array(data, name=init.name)
+            patched_shape = new_init.dims
+            merged_model.graph.initializer.remove(init)
+            merged_model.graph.initializer.append(new_init)
+            break
+
+        value_info_new = onnx.helper.make_tensor_value_info(condition_name, onnx.TensorProto.BOOL, patched_shape)
+        merged_model.graph.value_info.append(value_info_new)
+    return merged_model
+
   def _save_and_validate_model(self, merged_model, output_path) -> None:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    onnx.save(merged_model, output_path)
+    patched_model = self._patch_where_conditions(merged_model)
+    onnx.save(patched_model, output_path)
     validation_passed = self.validate_model.validate_target_model(output_path)
 
     if validation_passed:
