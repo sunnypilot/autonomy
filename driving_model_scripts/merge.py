@@ -163,9 +163,9 @@ class MergePolicyModel:
 
   def _check_architecture(self) -> None:
     if len(self.model1.graph.input) != len(self.model2.graph.input):
-      raise ValueError("incompatible input count")
+      raise ValueError("Incompatible input count")
     elif len(self.model1.graph.output) != len(self.model2.graph.output):
-      raise ValueError("Not same architecture between the two models!")
+      raise ValueError("Incompatible output count")
 
     for input1, input2 in zip(self.model1.graph.input, self.model2.graph.input):
       if input1.type.HasField('tensor_type') and input2.type.HasField('tensor_type'):
@@ -173,7 +173,7 @@ class MergePolicyModel:
           for dim1, dim2 in zip(input1.type.tensor_type.shape.dim, input2.type.tensor_type.shape.dim):
             if dim1.HasField('dim_value') and dim2.HasField('dim_value'):
               if dim1.dim_value != dim2.dim_value:
-                raise ValueError("input shape mismatch!")
+                raise ValueError("Input shape mismatch!")
 
     for output1, output2 in zip(self.model1.graph.output, self.model2.graph.output):
       if output1.type.HasField('tensor_type') and output2.type.HasField('tensor_type'):
@@ -181,7 +181,7 @@ class MergePolicyModel:
           for out_dim1, out_dim2 in zip(output1.type.tensor_type.shape.dim, output2.type.tensor_type.shape.dim):
             if out_dim1.HasField('dim_value') and out_dim2.HasField('dim_value'):
               if out_dim1.dim_value != out_dim2.dim_value:
-                raise ValueError("output shape mismatch!")
+                raise ValueError("Output shape mismatch!")
 
   def merge_model_weights(self, output_path, weight=0.5) -> None:
     checkpoint1_info, checkpoint2_info = self._extract_checkpoint_info()
