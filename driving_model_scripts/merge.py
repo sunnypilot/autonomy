@@ -28,6 +28,28 @@ class MergePolicyModel:
 
     return checkpoint1_info, checkpoint2_info
 
+  def _check_architecture(self) -> None:
+    if len(self.model1.graph.input) != len(self.model2.graph.input):
+      raise ValueError("Incompatible input count")
+    elif len(self.model1.graph.output) != len(self.model2.graph.output):
+      raise ValueError("Incompatible output count")
+
+    for input1, input2 in zip(self.model1.graph.input, self.model2.graph.input):
+      if input1.type.HasField('tensor_type') and input2.type.HasField('tensor_type'):
+        if len(input1.type.tensor_type.shape.dim) == len(input2.type.tensor_type.shape.dim):
+          for dim1, dim2 in zip(input1.type.tensor_type.shape.dim, input2.type.tensor_type.shape.dim):
+            if dim1.HasField('dim_value') and dim2.HasField('dim_value'):
+              if dim1.dim_value != dim2.dim_value:
+                raise ValueError("Input shape mismatch!")
+
+    for output1, output2 in zip(self.model1.graph.output, self.model2.graph.output):
+      if output1.type.HasField('tensor_type') and output2.type.HasField('tensor_type'):
+        if len(output1.type.tensor_type.shape.dim) == len(output2.type.tensor_type.shape.dim):
+          for out_dim1, out_dim2 in zip(output1.type.tensor_type.shape.dim, output2.type.tensor_type.shape.dim):
+            if out_dim1.HasField('dim_value') and out_dim2.HasField('dim_value'):
+              if out_dim1.dim_value != out_dim2.dim_value:
+                raise ValueError("Output shape mismatch!")
+
   def _merge_head_components(self, common_keys, params1, params2, head_prefixes):
     keys1 = set(params1.keys())
     keys2 = set(params2.keys())
@@ -160,28 +182,6 @@ class MergePolicyModel:
     else:
       print("\nModel saved but has validation issues")
       print(f"Check: '{output_path}'")
-
-  def _check_architecture(self) -> None:
-    if len(self.model1.graph.input) != len(self.model2.graph.input):
-      raise ValueError("Incompatible input count")
-    elif len(self.model1.graph.output) != len(self.model2.graph.output):
-      raise ValueError("Incompatible output count")
-
-    for input1, input2 in zip(self.model1.graph.input, self.model2.graph.input):
-      if input1.type.HasField('tensor_type') and input2.type.HasField('tensor_type'):
-        if len(input1.type.tensor_type.shape.dim) == len(input2.type.tensor_type.shape.dim):
-          for dim1, dim2 in zip(input1.type.tensor_type.shape.dim, input2.type.tensor_type.shape.dim):
-            if dim1.HasField('dim_value') and dim2.HasField('dim_value'):
-              if dim1.dim_value != dim2.dim_value:
-                raise ValueError("Input shape mismatch!")
-
-    for output1, output2 in zip(self.model1.graph.output, self.model2.graph.output):
-      if output1.type.HasField('tensor_type') and output2.type.HasField('tensor_type'):
-        if len(output1.type.tensor_type.shape.dim) == len(output2.type.tensor_type.shape.dim):
-          for out_dim1, out_dim2 in zip(output1.type.tensor_type.shape.dim, output2.type.tensor_type.shape.dim):
-            if out_dim1.HasField('dim_value') and out_dim2.HasField('dim_value'):
-              if out_dim1.dim_value != out_dim2.dim_value:
-                raise ValueError("Output shape mismatch!")
 
   def merge_model_weights(self, output_path, weight=0.5) -> None:
     checkpoint1_info, checkpoint2_info = self._extract_checkpoint_info()
