@@ -2,6 +2,7 @@ import copy
 import os
 import onnx
 import tempfile
+import pytest
 
 from driving_model_scripts.merge import MergePolicyModel
 
@@ -12,6 +13,7 @@ class TestMerge:
     self.model_2: str = "driving_model_scripts/tests/debug/model2/driving_policy.onnx"
     self.model1 = onnx.load(self.model_1)
     self.model2 = onnx.load(self.model_2)
+    self.broken_model = onnx.load("driving_model_scripts/tests/debug/broken_model/no_weights.onnx")
     self.merge = MergePolicyModel(self.model_1, self.model_2)
     self.temp_path = tempfile.NamedTemporaryFile(suffix='.onnx', delete=False)
     self.temp_model = copy.deepcopy(self.model2)
@@ -23,6 +25,17 @@ class TestMerge:
     checkpoint1, checkpoint2 = self.merge._extract_checkpoint_info()
     assert checkpoint1 != "" and checkpoint1 is not None
     assert checkpoint2 != "" and checkpoint2 is not None
+
+  def test_check_architecture(self):
+    try:
+      self.merge._check_architecture()
+    except ValueError:
+      pytest.fail("Expected no value error for a valid model set")
+
+    with pytest.raises(ValueError):
+      self.merge.model1 = self.model1
+      self.merge.model2 = self.broken_model
+      self.merge._check_architecture() 
 
   def test_merge_head_components(self):
     params1 = {init.name: init for init in self.model1.graph.initializer}
